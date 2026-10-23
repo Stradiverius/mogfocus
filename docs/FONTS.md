@@ -1,6 +1,6 @@
 # Bundled fonts / přibalené fonty
 
-MogFocus 0.2.0 ships unmodified **DejaVu Sans** and **DejaVu Sans Bold**, version
+MogFocus ships unmodified **DejaVu Sans** and **DejaVu Sans Bold**, version
 2.37, from the environment’s Debian `fonts-dejavu-core` package. Upstream:
 https://dejavu-fonts.github.io/. Redistribution license and copyright notices are
 in `MogFocus/LICENSES/DejaVu.txt` (Bitstream Vera license; DejaVu changes public domain).
@@ -18,6 +18,19 @@ restricted to MogFocus’s own tab. Context-menu initializers style only descrip
 added by MogFocus; pooled native menu strings are reset by Blizzard on reuse.
 A separate MogFocus tooltip receives fonts both after display and after async
 tooltip data processing. No global game font or global GameTooltip is modified.
+
+Version 0.2.1 fixes a startup error in 0.2.0: a SimpleFont object's `SetFont`
+method returns no value, so asserting that result incorrectly stopped the entire
+font file. The methods are now defined before asset initialization. Loading is
+checked with `pcall` and `GetFont`, and a real missing asset falls back inside the
+private FontObject to the game font. A single localized warning requests a full
+ZIP reinstall; the fallback keeps the UI usable but does not guarantee Czech
+glyphs. The shipped TTF files and their hashes are unchanged.
+
+Verze 0.2.1 opravuje pád při načítání: `SimpleFont:SetFont` nevrací potvrzení
+úspěchu. Při skutečně chybějícím fontu se použije dočasné písmo hry a zobrazí se
+jedna zpráva. Náhrada nemusí podporovat celou češtinu; obnoví ji instalace úplného
+ZIPu s oběma fonty. Přibalené soubory fontů zůstávají beze změny.
 
 `tools/check.py` reads BOTH shipped TTF Unicode cmaps using fontTools. It requires
 every character from the Czech dictionary and the complete user-provided sample:

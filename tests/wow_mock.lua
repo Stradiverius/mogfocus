@@ -133,7 +133,17 @@ function Frame:GetHeight() return anchoredSize(self, true) end
 function Frame:GetName() return self.name end
 function Frame:SetID(id) self.id = id end
 function Frame:GetID() return self.id or 0 end
-function Frame:SetFont(path, size) self.fontPath, self.fontSize = path, size; return true end
+function Frame:SetFont(path, size, flags)
+    if mockFontFailure and path:find("DejaVuSans", 1, true) then error("Font asset unavailable") end
+    self.fontPath, self.fontSize, self.fontFlags = path, size, flags
+    -- SimpleFont:SetFont has NO return values; FontString:SetFont returns success.
+    if self.kind ~= "Font" then return true end
+end
+function Frame:GetFont()
+    if self.fontPath then return self.fontPath, self.fontSize, self.fontFlags end
+    if self.fontObject then return "Fonts\\FRIZQT__.TTF", self.fontSize or 12, "" end
+end
+function Frame:SetFontHeight(size) self.fontSize = size end
 function Frame:SetFontObject(font) self.fontObject = font end
 function Frame:GetFontObject() return self.fontObject end
 function Frame:SetNormalFontObject(font) self.normalFont = font end

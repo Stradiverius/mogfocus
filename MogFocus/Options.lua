@@ -13,7 +13,21 @@ function O:Changed(key, value)
 end
 
 function O:Register()
-    if self.panel or not Settings or not Settings.RegisterCanvasLayoutCategory then return end
+    if self.ready then return true end
+    if self.building or not Settings or not Settings.RegisterCanvasLayoutCategory then return false end
+    self.building = true
+    local ok = M:TrySetup("Options", function()
+        if not self.panelReady then self:BuildPanel() end
+        if not self.category then self.category = Settings.RegisterCanvasLayoutCategory(self.panel, "MogFocus") end
+        Settings.RegisterAddOnCategory(self.category)
+    end)
+    self.building = nil
+    if ok then self.ready = true
+    elseif self.panel then self.panel:Hide() end
+    return ok
+end
+
+function O:BuildPanel()
     local U = M.UI
     local panel = U:Panel(UIParent); panel:Hide()
     self.panel = panel
@@ -47,12 +61,11 @@ function O:Register()
     self.help = U:Text(panel, M.L("HELP")); self.help:SetPoint("TOPLEFT", 20, -500); self.help:SetWidth(580)
     self.dataNote = U:Text(panel, M.L("DATA_NOTE")); self.dataNote:SetPoint("TOPLEFT", 20, -530); self.dataNote:SetWidth(580)
     panel:SetScript("OnShow", function() self:Refresh() end)
-    self.category = Settings.RegisterCanvasLayoutCategory(panel, "MogFocus")
-    Settings.RegisterAddOnCategory(self.category)
+    self.panelReady = true
 end
 
 function O:Refresh()
-    if not self.panel then return end
+    if not self.panelReady then return end
     self.note:SetText(M.L("ACCOUNT")); self.help:SetText(M.L("HELP")); self.dataNote:SetText(M.L("DATA_NOTE"))
     for _, row in ipairs(self.rows) do
         local spec = row.spec
@@ -71,8 +84,7 @@ end
 function O:Open()
     if not M.ready then M:Print(M.L(M.blocked or "NO_PROFILE")); return end
     if InCombatLockdown() then M:Print(M.L("COMBAT")); return end
-    self:Register()
-    if self.category then Settings.OpenToCategory(self.category:GetID()) end
+    if self:Register() then Settings.OpenToCategory(self.category:GetID()) end
 end
 
 function O:Changelog()

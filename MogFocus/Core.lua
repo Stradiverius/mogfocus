@@ -13,6 +13,12 @@ function M:Debug()
         self:Print(spec[1] .. "." .. spec[2] .. ": " .. self.L(available and "YES" or "NO"))
     end
     if self.lastAPIError then self:Print(self.lastAPIError .. ": " .. self.L("UNAVAILABLE")) end
+    for _, stage in ipairs({ { "Profile", self.ready }, { "Fonts", self.Fonts.ready and not self.Fonts.fallback },
+        { "Options", self.Options.ready }, { "Collections", self.Integration.collectionsReady }, { "UI", self.UI.ready } }) do
+        self:Print(stage[1] .. ": " .. self.L(stage[2] and "YES" or "NO"))
+    end
+    for stage, err in pairs(self.setupErrors or {}) do self:Print(stage .. ": " .. err) end
+    if self.Fonts.fallback then self:Print(self.L("FONT_FALLBACK")) end
 end
 
 function M:Notify(set)
@@ -81,16 +87,20 @@ function M:StartCatalog()
 end
 
 function M:Initialize()
-    if self.ready then return end
-    local db, err = self.Store:Open(MogFocusDB, UnitGUID("player"))
-    if not db then self.blocked = err; self:Print(self.L(err)); return end
-    MogFocusDB = db
-    if not C_TransmogSets or not C_TransmogSets.GetSetPrimaryAppearances or not C_TransmogCollection or not C_TransmogCollection.GetSourceInfo then
-        self.blocked = "API_MISSING"; self:Print(self.L(self.blocked)); return
+    if not self.ready then
+        local db, err = self.Store:Open(MogFocusDB, UnitGUID("player"))
+        if not db then self.blocked = err; self:Print(self.L(err)); return end
+        MogFocusDB = db
+        if not C_TransmogSets or not C_TransmogSets.GetSetPrimaryAppearances or not C_TransmogCollection or not C_TransmogCollection.GetSourceInfo then
+            self.blocked = "API_MISSING"; self:Print(self.L(self.blocked)); return
+        end
+        -- Data is available even when combat or a UI error defers a later stage.
+        self.ready = true
+        self:Refresh(true)
     end
-    self.ready = true
+    self.Fonts:Report()
+    -- Each UI module owns its own completion flag and may finish on a retry.
     if not InCombatLockdown() then self.Options:Register(); self.Integration:Update() end
-    self:Refresh(true)
 end
 
 events:RegisterEvent("ADDON_LOADED")
@@ -102,9 +112,9 @@ for _, event in ipairs({ "TRANSMOG_COLLECTION_UPDATED", "TRANSMOG_COLLECTION_SOU
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 == addon and IsLoggedIn() then M:Initialize() end
-        if arg1 == "Blizzard_Collections" and M.ready then M.Integration:Collections() end
+        if arg1 == "Blizzard_Collections" and M.ready then M.Integration:Update() end
     elseif event == "PLAYER_LOGIN" then M:Initialize()
-    elseif event == "PLAYER_REGEN_ENABLED" then if M.ready then M.Options:Register(); M.Integration:Update() end
+    elseif event == "PLAYER_REGEN_ENABLED" then M:Initialize()
     elseif M.ready then
         if event == "UNIT_MODEL_CHANGED" and arg1 ~= "player" then return end
         if event == "UNIT_MODEL_CHANGED" then M.UI.modelSet = nil end

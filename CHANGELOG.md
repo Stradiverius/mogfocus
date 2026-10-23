@@ -1,5 +1,35 @@
 # Changelog / Co je nového
 
+## 0.2.1 — 2026-10-23
+
+### Čeština
+
+**Nové funkce**
+
+Diagnostika nově ukazuje připravenost fontů, nastavení, Collections a trackeru. Chybějící font má dočasnou náhradu s jednorázovým vysvětlením.
+
+**Změny**
+
+Jednotlivé části rozhraní mohou načítání zopakovat nezávisle. Nedokončené rámy zůstávají skryté a opětovné otevření Collections může načítání dokončit bez duplicitních záložek a obsluh událostí. Uložené cíle a nastavení se nemění.
+
+**Opravy**
+
+Opravena fatální kontrola fontu: SimpleFont:SetFont v Retailu nevrací hodnotu. Opraven testovací model a doplněno ověření pořadí přihlášení, běžného otevření Collections bez příkazu, odložení v boji a přerušeného načítání. Ještě je nutné ověření přímo ve hře.
+
+### English
+
+**New features**
+
+Startup diagnostics now report font, Settings, Collections and tracker readiness. A missing font uses a temporary fallback with one explanatory message.
+
+**Changes**
+
+UI setup stages can retry independently. Incomplete frames remain hidden, and reopening Collections can finish setup without duplicate tabs or callbacks. Saved goals and settings are unchanged.
+
+**Fixes**
+
+Fixed the fatal font assertion: SimpleFont:SetFont returns no value in Retail. Corrected the test mock and covered login order, normal Collections opening without a slash command, combat deferral and interrupted initialization. In-game validation remains required.
+
 ## 0.2.0 — 2026-10-23
 
 ### Čeština

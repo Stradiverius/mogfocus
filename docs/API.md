@@ -16,6 +16,7 @@ Paths below are relative to `Interface/AddOns/` in that commit:
 
 | File | Verified contract / ověřená vazba |
 | --- | --- |
+| `Blizzard_APIDocumentationGenerated/SimpleFontAPIDocumentation.lua`, `SimpleFontStringAPIDocumentation.lua` | `SimpleFont:SetFont(fontFile, height, flags)` has **no return values**. Only `FontString:SetFont` returns a success boolean. MogFocus checks `pcall` and the private FontObject's `GetFont()` result, with private inheritance from `GameFontNormal` on a real asset failure. `SetFontHeight` is documented for SimpleFont. Verified for the 0.2.1 fix. |
 | `Blizzard_APIDocumentationGenerated/TransmogSetsDocumentation.lua` | `GetAllSets()`, `GetVariantSets(setID)`, `GetSetInfo(setID)`, `GetSetPrimaryAppearances(setID)`. Info contains `setID`, `baseSetID`, `description`, `label`, `expansionID`, `classMask`, `collected`, `validForCharacter`. No documented raid/PvP flag. |
 | `Blizzard_TransmogShared/Blizzard_TransmogShared.lua` | `WardrobeSetsDataProviderMixin:GetSortedSetSources`: `primary.appearanceID` is passed to `C_TransmogCollection.GetSourceInfo` as a **sourceID**, despite its field name. Primary `collected` flags drive Blizzard set counts. |
 | `Blizzard_APIDocumentationGenerated/AppearanceSourceDocumentation.lua` | Source struct distinguishes `visualID`, `sourceID`, `itemID`, `invType`, `categoryID`, `isCollected`, usability and `sourceType`. MogFocus deduplicates primary parts by `visualID`, while keeping the specific variant/source for preview and routes. |

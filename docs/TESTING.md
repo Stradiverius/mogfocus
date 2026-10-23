@@ -46,8 +46,9 @@ dalších addonů, aby šlo určit případné kolize.
 
 - [ ] První spuštění: prázdný profil, žádné oslavy, české texty, Warcraft skin,
   ikona helmy, souhrn 0 z 0 bez 100 %, tlačítko „Vybrat první set“.
-- [ ] Před prvním otevřením Collections: slash a minimapa otevřou tracker. Poté
-  Collections zobrazí MogFocus ve spodní řadě hned za Campsites; záložka je čitelná,
+- [ ] Po přihlášení nejprve otevřít Collections běžnou cestou, bez `/mogfocus`.
+  MogFocus je už ve spodní řadě hned za Campsites a kliknutí zobrazí obsah.
+  Po dalším přihlášení samostatně ověřit první otevření přes slash a minimapu; záložka je čitelná,
   kliknutelná a nekoliduje s ostatními záložkami. Nahoře u Items/Sets není tlačítko.
 - [ ] Po předchozím načtení Collections a po `/reload` se záložka nevytváří dvakrát.
   Přepnutí na Mounts/Pets/Appearances obnoví původní stránku a skryje tracker.
@@ -105,7 +106,9 @@ addons to isolate integration conflicts.
 
 - [ ] Empty first login, correct defaults, no completion celebration, no empty
   100%, functional first-set button.
-- [ ] Slash/minimap before Collections loads; Collections tab before/after first
+- [ ] First open normal Collections after login, without a slash command; the
+  MogFocus tab is present and clicking it shows content. In a separate login test
+  slash/minimap before Collections loads; Collections tab before/after first
   opening, reload, page switching and another addon adding controls. No duplicate
   button or overlap with search/filters.
 - [ ] Catalog search and expansion/raid/class/variant filters, cold cache, only
@@ -140,8 +143,9 @@ addons to isolate integration conflicts.
 
 ## 0.2.0 regression checklist / kontrola aktualizace
 
-The automated runner now executes the 13 original behavior tests plus 8 update
-regressions (one in a fresh VM for combat-first initialization), Lua 5.1 syntax/TOC order, 122 keys in both languages, both actual TTF
+The 0.2.0 runner added 8 update regressions to the 13 original behavior tests
+(one in a fresh VM for combat-first initialization), Lua 5.1 syntax/TOC order,
+translation parity, both actual TTF
 character maps, changelog parity and optional Blizzard source-contract checks.
 Fixture ID comparisons verify the algorithm; they do not establish live catalog
 completeness. The following checks are UNRUN without a WoW client:
@@ -182,3 +186,32 @@ jen počet řádků. Postupně vyberte všechny classy a expanze v původním Bl
 Samostatně ověřte neraidový set bez známého zdroje, ruční výběr jediné varianty,
 české položky pravého tlačítka po scrollování a návrat z MogFocus na původní stránky.
 Všechny uvedené herní body zatím čekají na klienta.
+
+## 0.2.1 startup regression checks / oprava načítání
+
+`tools/check.py` now runs **33 behavior scenarios**: the previous 21 plus 12
+isolated startup cases. Each new case loads every TOC file into a fresh Lua 5.1
+VM. `SimpleFont:SetFont` returns nil in the mock, matching the pinned Blizzard
+documentation. With that correction alone, 0.2.0 reproduces the fatal assertion
+in Fonts.lua. FontString retains its distinct boolean return contract.
+
+The new cases cover Collections before/after login, late addon loading, an empty
+profile, unavailable font assets, interrupted Settings panel/registration, partial
+tracker construction/layout, failed Collections callback registration, reentrant
+setup and menu registration failure. They verify ordinary Collections opening
+without slash, visible empty/populated content and catalog, one tab/callback/menu
+registration after retries, and preserved goals, other profiles and settings.
+The checker also validates 127 keys in each language and both shipped font cmaps.
+
+`M.ready` means profile/API readiness. Options, the tracker and Collections each
+have a separate completion flag; partial frames are not considered ready. Settings
+failure cannot stop Collections setup. Native journal opening, slash/minimap or
+combat end can retry the relevant stages. No recurring initialization timer runs.
+
+- [ ] Ve hře po aktualizaci na 0.2.1 ověřit přihlášení a první otevření Collections
+  bez příkazu. Záložka má ukázat cíle, nebo zprávu o prázdném výběru a tlačítko
+  „Vybrat první set“. Poté zkontrolovat katalog a českou diakritiku.
+- [ ] Verify the same first-open flow in WoW after upgrading to 0.2.1, plus native
+  page restoration, Settings, reload, preserved profiles and both languages.
+
+Tyto poslední herní kontroly zatím neproběhly.

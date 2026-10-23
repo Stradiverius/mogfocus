@@ -39,6 +39,20 @@ for name in files:
 combat_lua.globals().M = combat_namespace
 combat_lua.execute((ROOT / "tests/combat.lua").read_text())
 
+# Cold-load and interrupted-startup regressions must not reuse an initialized UI.
+for scenario in ("login_before_collections", "collections_before_login", "addon_after_login", "empty_profile",
+                 "missing_font", "options_failure", "settings_registration_failure", "ui_failure",
+                 "layout_failure", "collections_callback_failure", "collections_reentry", "menu_failure"):
+    startup_lua = LuaRuntime()
+    startup_lua.execute((ROOT / "tests/wow_mock.lua").read_text())
+    startup_lua.globals().mockStartupScenario = scenario
+    startup_lua.globals().mockFontFailure = scenario == "missing_font"
+    startup_namespace = startup_lua.table()
+    for name in files:
+        startup_lua.eval("function(s) return assert(loadstring(s)) end")((ADDON / name).read_text())("MogFocus", startup_namespace)
+    startup_lua.globals().M = startup_namespace
+    startup_lua.execute((ROOT / "tests/startup.lua").read_text())
+
 # Literal localization usages and runtime changelog parity.
 keys = set(namespace.locales.en.keys())
 assert keys == set(namespace.locales.cs.keys()), "Locale dictionaries differ"

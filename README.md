@@ -1,8 +1,13 @@
-# MogFocus 0.2.0 — WoW Retail
+# MogFocus 0.2.1 — WoW Retail
 
-[Download / stáhnout ZIP](https://github.com/Stradiverius/mogfocus/raw/refs/heads/main/dist/MogFocus-0.2.0.zip)
+[Download / stáhnout ZIP](https://github.com/Stradiverius/mogfocus/raw/refs/heads/main/dist/MogFocus-0.2.1.zip)
 
 ## Česky
+
+Verze **0.2.1** opravuje pád při načítání fontů, kvůli kterému se záložka
+MogFocus objevila až po příkazu a zůstala prázdná. Načítání nastavení a trackeru
+lze po přerušení zopakovat. Při skutečně chybějícím fontu se použije dočasná
+náhrada a vypíše se zpráva; nainstalujte celý ZIP včetně složky `Fonts`.
 
 MogFocus sleduje ručně vybrané transmog sety a jednotlivé varianty pro každou
 postavu zvlášť. Katalog nyní zahrnuje raidové i ostatní sety, které poskytuje
@@ -13,7 +18,7 @@ backend ani externí účet. Je určen pro Retail, nikoliv klienty Classic.
 
 1. Ukončete hru a zálohujte
    `WTF/Account/<účet>/SavedVariables/MogFocus.lua`.
-2. Rozbalte `MogFocus-0.2.0.zip` do
+2. Rozbalte `MogFocus-0.2.1.zip` do
    `World of Warcraft/_retail_/Interface/AddOns/`.
 3. Výsledná cesta je `Interface/AddOns/MogFocus/MogFocus.toc`. ZIP má právě jednu
    kořenovou složku `MogFocus`, včetně fontů a licencí. Nevytvářejte druhou vnořenou
@@ -22,8 +27,8 @@ backend ani externí účet. Je určen pro Retail, nikoliv klienty Classic.
    **120105**; skutečnou verzi zjistíte `/mogfocus debug` nebo `/dump GetBuildInfo()`.
    Při jiném buildu ověřte API, nepřepisujte pouze číslo v `.toc`.
 
-Verze 0.2.0 zachovává schéma 2, GUID profily, vybrané varianty, pořadí, připnutí,
-aktuální expanzi i všechna nastavení verze 0.1.0. Načtení katalogu nepřidává cíle.
+Verze 0.2.1 zachovává schéma 2, GUID profily, vybrané varianty, pořadí, připnutí,
+aktuální expanzi i všechna nastavení verzí 0.1.0 i 0.2.0. Načtení katalogu nepřidává cíle.
 
 ### Otevření a používání
 
@@ -70,7 +75,8 @@ Licence je v `MogFocus/LICENSES/DejaVu.txt`, podrobnosti v [docs/FONTS.md](docs/
 
 ### Diagnostika, rozsah dat a testování
 
-`/mogfocus debug` vypíše verzi, build a dostupnost API bez osobních údajů.
+`/mogfocus debug` vypíše verzi, build, dostupnost API a připravenost jednotlivých
+částí rozhraní. Při přerušeném načítání doplní zachycenou Lua chybu.
 `/mogfocus catalogcheck` porovná ID aktuálního filtrovaného seznamu Blizzard Sets
 a jeho variant s katalogem MogFocus a vypíše chybějící ID. Pro ověření všech class
 opakujte příkaz po jejich výběru v původním Blizzard rozhraní; audit nemění filtry
@@ -87,6 +93,11 @@ načítání modelů a kolize addonů ověřte podle [docs/TESTING.md](docs/TEST
 
 ## English
 
+Version **0.2.1** fixes the fatal font initialization check that left the
+Collections tab absent or empty. Interrupted Settings/tracker setup can retry.
+A genuinely missing font uses a temporary fallback and one explanatory message;
+install the complete ZIP, including its `Fonts` directory.
+
 MogFocus tracks manually selected transmog set variants separately for each
 character. The catalog now includes raid and non-raid sets supplied by Blizzard
 Sets, across classes and expansions. Source metadata is optional. There are no
@@ -95,10 +106,10 @@ required addons, libraries, backend or external accounts. Retail only.
 ### Install / update
 
 Exit WoW and back up `WTF/Account/<account>/SavedVariables/MogFocus.lua`. Extract
-`MogFocus-0.2.0.zip` into `World of Warcraft/_retail_/Interface/AddOns/`; the final
+`MogFocus-0.2.1.zip` into `World of Warcraft/_retail_/Interface/AddOns/`; the final
 path must be `Interface/AddOns/MogFocus/MogFocus.toc`, without doubled nesting.
 Fonts and licenses are bundled. Enable MogFocus and keep your SavedVariables on
-upgrade. Version 0.2.0 retains schema 2 and all previous GUID-keyed goals, order,
+upgrade. Version 0.2.1 retains schema 2 and all previous GUID-keyed goals, order,
 pin, focus and account options. Catalog loading never selects goals automatically.
 
 Target: **Retail 12.1.5.70529**, Interface **120105**. Check your actual version
@@ -154,7 +165,7 @@ global WoW font. Game-supplied names remain in client language. See
 Sets view and its variants against MogFocus. Repeat with each class selected in
 Blizzard's UI to audit all classes. The command changes neither filters nor goals;
 zero native results do not establish completeness. `/mogfocus debug` reports the
-client and required APIs without personal data.
+client, required APIs, setup readiness and any captured initialization errors.
 
 The existing 229 Classic / Tier 4 mappings and live drop API remain unchanged.
 Unknown token, vendor and quest routes **no longer restrict catalog membership**;

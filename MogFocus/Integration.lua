@@ -35,7 +35,7 @@ function I:LayoutTab()
 end
 
 function I:OnTab(journal, selected)
-    if journal ~= CollectionsJournal or not self.tab then return end
+    if journal ~= CollectionsJournal or not self.collectionsReady or not M.UI.ready then return end
     local active = selected == self.tab:GetID()
     local opening = active and not self.content:IsShown()
     if active then
@@ -52,42 +52,87 @@ function I:OnTab(journal, selected)
 end
 
 function I:Collections()
-    if not CollectionsJournal then return end
-    if InCombatLockdown() then self.pendingCollections = true; return end
-    if self.tab then self:LayoutTab(); self:RegisterMenus(); return end
+    if not M.ready or not CollectionsJournal then return false end
+    if InCombatLockdown() then self.pendingCollections = true; return false end
+    if self.installing then return false end
     local journal = CollectionsJournal
-    if not journal.WarbandScenesTab then return end
-    local last = journal.numTabs or 0
-    while tabAt(journal, last + 1) do last = last + 1 end
-    local id = last + 1
-    local tab = CreateFrame("Button", journal:GetName() .. "Tab" .. id, journal, "CollectionsJournalTab")
-    tab:SetID(id); tab:SetText("MogFocus")
-    if journal.Tabs then journal.Tabs[id] = tab end
-    self.tab = tab
-    self.content = CreateFrame("Frame", nil, journal)
-    self.content:SetPoint("TOPLEFT", journal, "TOPLEFT", 8, -60)
-    self.content:SetPoint("BOTTOMRIGHT", journal, "BOTTOMRIGHT", -8, 8)
-    self.content:SetFrameLevel(journal:GetFrameLevel() + 10); self.content:Hide()
-    M.UI:Create(self.content)
-    PanelTemplates_SetNumTabs(journal, id)
-    EventRegistry:RegisterCallback("CollectionsJournal.TabSet", function(_, frame, selected) self:OnTab(frame, selected) end, self)
-    journal:HookScript("OnShow", function() self:OnTab(journal, PanelTemplates_GetSelectedTab(journal)) end)
-    journal:HookScript("OnSizeChanged", function() self:LayoutTab(); M.UI:Layout() end)
-    hooksecurefunc("PanelTemplates_AnchorTabs", function(frame) if frame == journal then self:LayoutTab() end end)
-    hooksecurefunc("PanelTemplates_UpdateTabs", function(frame)
-        if frame == journal then self:TabFonts() end
-    end)
+    if not journal.WarbandScenesTab then return false end
+    if self.collectionsReady and M.UI.ready then
+        self:LayoutTab(); M:TrySetup("Menu", self.RegisterMenus, self)
+        return true
+    end
+    self.installing = true
+    local ok, complete = M:TrySetup("Collections", self.BuildCollections, self, journal)
+    self.installing = nil
+    if not ok or not complete then
+        self.collectionsReady, self.pendingCollections = nil, true
+        if self.content then self.content:Hide() end
+        return false
+    end
+    M:TrySetup("Menu", self.RegisterMenus, self)
+    return true
+end
+
+function I:BuildCollections(journal)
+    -- Install this first: reopening normal Collections can finish failed setup.
+    if not self.showHooked then
+        journal:HookScript("OnShow", function()
+            if not self.collectionsReady then self:Collections() end
+            self:OnTab(journal, PanelTemplates_GetSelectedTab(journal))
+        end)
+        self.showHooked = true
+    end
+    if not self.content then
+        self.content = CreateFrame("Frame", nil, journal)
+        self.content:Hide()
+        self.content:SetPoint("TOPLEFT", journal, "TOPLEFT", 8, -60)
+        self.content:SetPoint("BOTTOMRIGHT", journal, "BOTTOMRIGHT", -8, 8)
+        self.content:SetFrameLevel(journal:GetFrameLevel() + 10)
+    end
+    if not M.UI:Create(self.content) then return false end
+    if not self.tab then
+        local last = journal.numTabs or 0
+        while tabAt(journal, last + 1) do last = last + 1 end
+        local id = last + 1
+        local tab = CreateFrame("Button", journal:GetName() .. "Tab" .. id, journal, "CollectionsJournalTab")
+        self.tab = tab
+        tab:Hide(); tab:SetID(id); tab:SetText("MogFocus")
+        if journal.Tabs then journal.Tabs[id] = tab end
+    end
+    if not self.tabRegistered then
+        PanelTemplates_SetNumTabs(journal, math.max(journal.numTabs or 0, self.tab:GetID()))
+        self.tabRegistered = true
+    end
+    if not self.eventRegistered then
+        EventRegistry:RegisterCallback("CollectionsJournal.TabSet", function(_, frame, selected) self:OnTab(frame, selected) end, self)
+        self.eventRegistered = true
+    end
+    if not self.sizeHooked then
+        journal:HookScript("OnSizeChanged", function() self:LayoutTab(); M.UI:Layout() end)
+        self.sizeHooked = true
+    end
+    if not self.anchorHooked then
+        hooksecurefunc("PanelTemplates_AnchorTabs", function(frame) if frame == journal then self:LayoutTab() end end)
+        self.anchorHooked = true
+    end
+    if not self.fontHooked then
+        hooksecurefunc("PanelTemplates_UpdateTabs", function(frame) if frame == journal then self:TabFonts() end end)
+        self.fontHooked = true
+    end
+    self:LayoutTab()
+    self.collectionsReady = true
     self.pendingCollections = nil
-    self:LayoutTab(); self:RegisterMenus()
+    self.tab:Show()
     self:OnTab(journal, PanelTemplates_GetSelectedTab(journal))
+    return true
 end
 
 function I:Open()
+    if IsLoggedIn() then M:Initialize() end
     if not M.ready then M:Print(M.L(M.blocked or "NO_PROFILE")); return end
     if InCombatLockdown() then M:Print(M.L("COMBAT")); return end
     if not CollectionsJournal then C_AddOns.LoadAddOn("Blizzard_Collections") end
-    self:Collections()
-    if not self.tab then M:Print(M.L("COLLECTIONS_UNAVAILABLE")); return end
+    if not self:Collections() then M:Print(M.L("COLLECTIONS_UNAVAILABLE")); return end
     if CollectionsJournal:IsShown() and M.UI.frame:IsShown() and PanelTemplates_GetSelectedTab(CollectionsJournal) == self.tab:GetID() then
         HideUIPanel(CollectionsJournal)
     else
@@ -119,7 +164,6 @@ end
 
 function I:RegisterMenus()
     if self.menuRegistered or not Menu or not Menu.ModifyMenu then return end
-    self.menuRegistered = true
     Menu.ModifyMenu("MENU_WARDROBE_SETS_SET", function(owner, root)
         if not M.ready or not owner or type(owner.setID) ~= "number" then return end
         local variants = M.Collection:Variants(owner.setID)
@@ -135,6 +179,7 @@ function I:RegisterMenus()
             end
         end
     end)
+    self.menuRegistered = true
 end
 
 function I:Minimap()
@@ -181,6 +226,8 @@ function I:PositionMinimap()
 end
 
 function I:Update()
-    self:Collections(); self:RegisterMenus(); self:Minimap()
+    self:Collections()
+    M:TrySetup("Menu", self.RegisterMenus, self)
+    M:TrySetup("Minimap", self.Minimap, self)
     if self.minimap then self.minimap:SetShown(M.Store.settings.minimap) end
 end

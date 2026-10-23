@@ -51,6 +51,11 @@ M.locales = {
         CHANGE_020_CHANGES = "The tracker fits Collections at native font size. Catalog IDs appear before optional source details. Existing profiles, settings and manually selected goals are preserved.",
         CHANGE_020_FIXES = "Bundled licensed DejaVu Sans and private FontObjects cover Czech text in every skin, reused row, menu, tooltip, Settings, notification and changelog. Removed the overlapping Wardrobe header button and corrected unpinning.",
         PREVIOUS = "Previous", NEXT_PAGE = "Next", PAGE = "Page %d/%d",
+        FONT_FALLBACK = "Bundled font unavailable. Using the game font temporarily; reinstall the complete MogFocus ZIP to restore Czech glyphs.",
+        INIT_FAILED = "%s: initialization interrupted. Opening again retries setup; details: /mogfocus debug.",
+        CHANGE_021_FEATURES = "Startup diagnostics now report font, Settings, Collections and tracker readiness. A missing font uses a temporary fallback with one explanatory message.",
+        CHANGE_021_CHANGES = "UI setup stages can retry independently. Incomplete frames remain hidden, and reopening Collections can finish setup without duplicate tabs or callbacks. Saved goals and settings are unchanged.",
+        CHANGE_021_FIXES = "Fixed the fatal font assertion: SimpleFont:SetFont returns no value in Retail. Corrected the test mock and covered login order, normal Collections opening without a slash command, combat deferral and interrupted initialization. In-game validation remains required.",
     },
     cs = {
         MY_SETS = "Moje sety", WHERE = "Kam jít", CATALOG = "Přidat sety", OPTIONS = "Nastavení",
@@ -103,6 +108,11 @@ M.locales = {
         CHANGE_020_CHANGES = "Tracker se přizpůsobuje oknu Collections při čitelné velikosti písma. ID katalogu jsou dostupná před načtením zdrojů. Existující profily, nastavení a ručně vybrané cíle zůstávají zachované.",
         CHANGE_020_FIXES = "Přibalený licencovaný DejaVu Sans a vlastní FontObjects podporují češtinu ve všech skinech, opakovaně používaných řádcích, nabídkách, tooltipech, nastavení, oznámeních a changelogu. Odstraněno překrývající tlačítko nahoře ve Wardrobe a opraveno odepnutí cíle.",
         PREVIOUS = "Předchozí", NEXT_PAGE = "Další", PAGE = "Strana %d/%d",
+        FONT_FALLBACK = "Přibalený font není dostupný. Dočasně se použije písmo hry; pro obnovení českých znaků nainstalujte celý ZIP MogFocus znovu.",
+        INIT_FAILED = "%s: načítání se přerušilo. Další otevření zkusí načítání dokončit; podrobnosti: /mogfocus debug.",
+        CHANGE_021_FEATURES = "Diagnostika nově ukazuje připravenost fontů, nastavení, Collections a trackeru. Chybějící font má dočasnou náhradu s jednorázovým vysvětlením.",
+        CHANGE_021_CHANGES = "Jednotlivé části rozhraní mohou načítání zopakovat nezávisle. Nedokončené rámy zůstávají skryté a opětovné otevření Collections může načítání dokončit bez duplicitních záložek a obsluh událostí. Uložené cíle a nastavení se nemění.",
+        CHANGE_021_FIXES = "Opravena fatální kontrola fontu: SimpleFont:SetFont v Retailu nevrací hodnotu. Opraven testovací model a doplněno ověření pořadí přihlášení, běžného otevření Collections bez příkazu, odložení v boji a přerušeného načítání. Ještě je nutné ověření přímo ve hře.",
     },
 }
 

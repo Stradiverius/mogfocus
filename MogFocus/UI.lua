@@ -125,8 +125,23 @@ function U:ExpansionChoices()
 end
 
 function U:Create(parent)
-    if self.frame then return end
-    local f = self:Panel(parent, "MogFocusFrame")
+    if self.ready then return true end
+    if self.building then return false end
+    self.building = true
+    local ok = M:TrySetup("UI", self.Build, self, parent)
+    self.building = nil
+    if not ok then
+        self.ready, self.layingOut = nil, nil
+        if self.frame then self.frame:Hide() end
+    end
+    return ok
+end
+
+function U:Build(parent)
+    -- Failed attempts stay hidden. Anonymous roots can be rebuilt safely;
+    -- the existence of a partially constructed frame never means readiness.
+    local f = self:Panel(parent)
+    f:Hide()
     f:SetAllPoints(parent); f:EnableMouse(true)
     self.frame = f
     f.title = self:Text(f, "MogFocus", true); f.title:SetPoint("TOPLEFT", 18, -16)
@@ -242,7 +257,7 @@ function U:Create(parent)
         self.modelSet, self.previewSources = nil, nil
     end)
     f:SetScript("OnSizeChanged", function() self:Layout() end)
-    f:Hide()
+    self.ready = true
     self:Layout()
 end
 
@@ -253,7 +268,7 @@ end
 -- Fit the actual Collections content rectangle; keep fonts at readable native
 -- sizes instead of shrinking the former standalone 1180px window.
 function U:Layout()
-    if not self.frame or self.layingOut then return end
+    if not self.ready or self.layingOut then return end
     self.layingOut = true
     local f = self.frame
     local width, height = f:GetWidth(), f:GetHeight()
@@ -312,7 +327,7 @@ function U:Layout()
 end
 
 function U:Render()
-    if not self.frame or not self.frame:IsShown() then return end
+    if not self.ready or not self.frame:IsShown() then return end
     local f, p = self.frame, M.Store.profile
     self.expansion = self.expansion or p.focus
     f.character:SetText((UnitFullName("player") or UnitName("player")) .. " · " .. (GetRealmName() or ""))
@@ -591,7 +606,7 @@ function U:FilterMenu(key)
 end
 
 function U:RenderCatalog()
-    if not self.frame or not self.frame:IsShown() or self.view ~= "catalog" then return end
+    if not self.ready or not self.frame:IsShown() or self.view ~= "catalog" then return end
     self.catalog:Clear()
     if self.filters.CLASS == nil then self.filters.CLASS = select(3, UnitClass("player")) or 0 end
     local f, collection = self.frame, M.Collection
