@@ -41,9 +41,10 @@ current Retail applicability and a verification build.
 Only direct raid drops exposed by live metadata, the listed Classic records and
 Tier 4 exchanges have reliable acquisition coverage. Other tokens, vendors,
 crafting, quests, restored Tier 3 and original removed drops need additional
-curation. Unclassified sets are intentionally omitted from the raid catalog;
+curation. Unknown acquisition metadata does not affect catalog membership or selection;
 already saved goals are never deleted when data becomes unavailable. API labels
-such as a tier name are not treated as proof of a raid source. Availability is
+such as a tier name are not treated as proof of a raid source. Since 0.2.0 the
+catalog includes all visible Blizzard Sets, including non-raid collections. Availability is
 never inferred from a missing response. Source names follow the client language;
 MogFocus explanations follow the selected Czech/English language.
 

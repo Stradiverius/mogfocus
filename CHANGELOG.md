@@ -1,5 +1,35 @@
 # Changelog / Co je nového
 
+## 0.2.0 — 2026-10-23
+
+### Čeština
+
+**Nové funkce**
+
+Nativní záložka Collections vedle Campsites a sledování pravým tlačítkem v Blizzard Sets s výslovným výběrem varianty. Katalog zahrnuje i neraidové sety, všechny classy a expanze poskytované Blizzardem.
+
+**Změny**
+
+Tracker se přizpůsobuje oknu Collections při čitelné velikosti písma. ID katalogu jsou dostupná před načtením zdrojů. Existující profily, nastavení a ručně vybrané cíle zůstávají zachované.
+
+**Opravy**
+
+Přibalený licencovaný DejaVu Sans a vlastní FontObjects podporují češtinu ve všech skinech, opakovaně používaných řádcích, nabídkách, tooltipech, nastavení, oznámeních a changelogu. Odstraněno překrývající tlačítko nahoře ve Wardrobe a opraveno odepnutí cíle.
+
+### English
+
+**New features**
+
+A native Collections tab beside Campsites and right-click tracking from Blizzard Sets, with explicit variant selection. Catalog includes non-raid sets, all classes and expansions exposed by Blizzard.
+
+**Changes**
+
+The tracker fits Collections at native font size. Catalog IDs appear before optional source details. Existing profiles, settings and manually selected goals are preserved.
+
+**Fixes**
+
+Bundled licensed DejaVu Sans and private FontObjects cover Czech text in every skin, reused row, menu, tooltip, Settings, notification and changelog. Removed the overlapping Wardrobe header button and corrected unpinning.
+
 ## 0.1.0 — 2026-10-23
 
 ### Čeština

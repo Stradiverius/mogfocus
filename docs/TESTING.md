@@ -47,12 +47,12 @@ dalších addonů, aby šlo určit případné kolize.
 - [ ] První spuštění: prázdný profil, žádné oslavy, české texty, Warcraft skin,
   ikona helmy, souhrn 0 z 0 bez 100 %, tlačítko „Vybrat první set“.
 - [ ] Před prvním otevřením Collections: slash a minimapa otevřou tracker. Poté
-  Collections → Appearances zobrazí MogFocus vedle Sets; tlačítko je čitelné,
-  klikatelné a nekoliduje s filtry, hledáním ani záložkami jiného addonu.
-- [ ] Po předchozím načtení Collections a po `/reload` se vstup nevytváří dvakrát.
-  Přepnutí na Mounts/Pets jej skryje spolu se stránkou Appearances.
+  Collections zobrazí MogFocus ve spodní řadě hned za Campsites; záložka je čitelná,
+  kliknutelná a nekoliduje s ostatními záložkami. Nahoře u Items/Sets není tlačítko.
+- [ ] Po předchozím načtení Collections a po `/reload` se záložka nevytváří dvakrát.
+  Přepnutí na Mounts/Pets/Appearances obnoví původní stránku a skryje tracker.
 - [ ] Katalog: filtry expanze, raidu, classy a varianty; textové hledání; první
-  otevření i studená cache; neověřené kolekce se nevydávají za raidové.
+  otevření i studená cache; neraidové a neověřené kolekce lze vybrat bez čekání na zdroje.
 - [ ] Přidat dvě dostupné obtížnosti stejného setu. Přidání každé vytvoří právě
   jeden vlastní cíl. Počty, názvy variant a sloty odpovídají Blizzard Wardrobe.
 - [ ] Připnout jeden cíl, změnit vlastní pořadí, zkusit řazení podle dokončení a
@@ -105,11 +105,11 @@ addons to isolate integration conflicts.
 
 - [ ] Empty first login, correct defaults, no completion celebration, no empty
   100%, functional first-set button.
-- [ ] Slash/minimap before Collections loads; Wardrobe entry before/after first
+- [ ] Slash/minimap before Collections loads; Collections tab before/after first
   opening, reload, page switching and another addon adding controls. No duplicate
   button or overlap with search/filters.
 - [ ] Catalog search and expansion/raid/class/variant filters, cold cache, only
-  evidence-based raid admission. Add two variants separately without duplicates.
+  inclusion of non-raid and unknown-source sets. Add two variants separately without duplicates.
 - [ ] Compare counts, variants, slots and usability with Blizzard's collection;
   test variable part counts and multiple sources sharing an appearance.
 - [ ] Separate browsing from saved current focus; prepare TBC while focused on
@@ -137,3 +137,48 @@ addons to isolate integration conflicts.
 - [ ] Upgrade without data loss, migration on a backup, future-schema refusal.
 - [ ] Combat safety and taint, late Collections load deferred until combat ends;
   hidden-window performance and event coalescing.
+
+## 0.2.0 regression checklist / kontrola aktualizace
+
+The automated runner now executes the 13 original behavior tests plus 8 update
+regressions (one in a fresh VM for combat-first initialization), Lua 5.1 syntax/TOC order, 122 keys in both languages, both actual TTF
+character maps, changelog parity and optional Blizzard source-contract checks.
+Fixture ID comparisons verify the algorithm; they do not establish live catalog
+completeness. The following checks are UNRUN without a WoW client:
+
+- [ ] Copy 0.1.0 SavedVariables as a backup, install 0.2.0, verify each character’s
+  targets, variants, order, pin/focus, language, skin, and account preferences.
+- [ ] Show the exact sample from FONTS.md in Czech Settings, buttons, pickers,
+  tooltip, catalog/list rows, action confirmations and changelog. Switch all three
+  skins and both languages, scroll/reuse rows, close/reopen. No missing glyph boxes.
+- [ ] Right-click an original Blizzard Sets row. Keep Blizzard favorite actions
+  functional; verify Czech Add/Already tracked/Remove text uses the bundled font.
+  Scroll, search and change class, then right-click a reused row: the action must
+  target that row’s set. For a group choose exactly one variant, verify duplicates
+  cannot be added, remove it again, and confirm focus/other profiles never change.
+- [ ] Collections main tab is immediately after Campsites before/after repeated
+  opens, reload, loading Collections for the first time and changing UI scale.
+  Check the native selected/unselected states, tab text fitting and other addons
+  adding tabs before/after MogFocus. There is no Wardrobe header button.
+- [ ] MogFocus displays INSIDE Collections; content fits 703×606 and any native
+  size changes, with readable text, scrollable parts and usable preview/actions.
+  Switch back to Appearances and all other pages; original content returns.
+  Slash and minimap target the same tab; Escape/native close closes Collections.
+- [ ] With default Blizzard filters, run `/mogfocus catalogcheck` for EVERY class.
+  Compare actual missing ID lists, base/variant IDs, hidden-until-collected rules,
+  PvP/event/vendor/raid sets and every available expansion with Blizzard Sets.
+  Reset native collected/PvE/PvP/search filters first, then test them individually.
+  Expected missing count is zero for every nonempty native view. Retain the output
+  and IDs, not just a claim that the number of rows looks right.
+- [ ] Catalog appears before raid/source enrichment and offers unknown sources.
+  With an empty profile, opening/scanning catalog leaves My sets empty. Each add
+  requires an explicit action and selects only that exact setID.
+- [ ] Enter combat before first Collections load, while switching tabs and with
+  a menu/preview already open. No protected-action/taint error, duplicated tabs
+  or changed native callbacks; deferred integration completes after combat.
+
+Při herním ověření zaznamenejte skutečná ID a varianty přes `catalogcheck`, nikoliv
+jen počet řádků. Postupně vyberte všechny classy a expanze v původním Blizzard UI.
+Samostatně ověřte neraidový set bez známého zdroje, ruční výběr jediné varianty,
+české položky pravého tlačítka po scrollování a návrat z MogFocus na původní stránky.
+Všechny uvedené herní body zatím čekají na klienta.

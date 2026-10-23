@@ -23,7 +23,7 @@ Paths below are relative to `Interface/AddOns/` in that commit:
 | `Blizzard_FrameXMLUtil/CollectionsUtil.lua` | Blizzard uses drop lookup for `TRANSMOG_SOURCE_BOSS_DROP` and `INSTANCE_TYPE_RAID` for raid metadata; MogFocus follows this classification instead of translated name matching. |
 | `Blizzard_APIDocumentationGenerated/TransmogDocumentation.lua` | `TRANSMOG_COLLECTION_UPDATED`, `TRANSMOG_COLLECTION_SOURCE_ADDED`, `TRANSMOG_COLLECTION_SOURCE_REMOVED`, `TRANSMOG_COLLECTION_ITEM_UPDATE`, `TRANSMOG_SOURCE_COLLECTABILITY_UPDATE`. No invented `TRANSMOG_SETS_UPDATE` event. |
 | `Blizzard_APIDocumentationGenerated/ItemDocumentation.lua` | `C_Item.GetItemInfo(itemID)`, `GetItemInfoInstant(itemID)`, `RequestLoadItemDataByID(itemID)`, `ITEM_DATA_LOAD_RESULT(itemID, success)`. Missing names do not change collection ownership. |
-| `Blizzard_Collections/Blizzard_Collections_Mainline.toc`, `Mainline/Blizzard_Wardrobe.xml` | Load-on-demand addon `Blizzard_Collections`; `WardrobeCollectionFrame` and its `SetsTab`. MogFocus waits for `ADDON_LOADED`, adds its own button, and defers frame creation in combat. No overwrite, tab numbering change or insecure hook of protected behavior. |
+| `Blizzard_Collections/Blizzard_Collections_Mainline.toc`, `Mainline/Blizzard_Wardrobe.xml` | Load-on-demand addon `Blizzard_Collections`; `WardrobeCollectionFrame` and its `SetsTab`. MogFocus waits for `ADDON_LOADED` and defers frame creation in combat. Version 0.2.0 adds a main Collections tab; it does not modify the Wardrobe header or its internal tabs. |
 | `Blizzard_Settings_Shared/Blizzard_ImplementationReadme.lua` | `Settings.RegisterCanvasLayoutCategory(frame, name)`, `Settings.RegisterAddOnCategory(category)`, `Settings.OpenToCategory(category:GetID())`. Native AddOns category with a custom canvas. |
 | `Blizzard_APIDocumentationGenerated/FrameAPIDressUpModelDocumentation.lua` | `DressUpModel:Undress()`, `TryOn(linkOrItemModifiedAppearanceID)` on a **separate** model. Source IDs preserve exact appearance variant. Inherited player-model camera methods provide rotation and portrait zoom. |
 | `Blizzard_EncounterJournal/Mainline/Blizzard_EncounterJournal.lua` | `EncounterJournal_OpenJournal(difficultyID, instanceID, encounterID, sectionID, creatureID, itemID, tierIndex)`. Used only for curated numeric mappings after `C_AddOns.LoadAddOn("Blizzard_EncounterJournal")`; never guessed from a boss name. |
@@ -42,3 +42,49 @@ Neúplná data se nezmění na falešné 0/N. První načtení pouze založí v�
 oznámení. Zdroje se ověřují pro jednotlivé části, nikoliv odhadem podle názvu setu.
 Jména z herního API se nepřekládají. Addon nikdy nepoužívá funkce pro aplikaci
 transmogu, inventářové akce ani automatické hraní.
+
+## 0.2.0 integration contracts
+
+The same pinned `live` commit was fetched again and verified on 2026-10-23.
+
+- `Blizzard_Collections/Mainline/Blizzard_Collections.xml`: the bottom main tabs
+  use `CollectionsJournalTab` / `PanelTabButtonTemplate`. The Campsites tab is
+  `CollectionsJournal.WarbandScenesTab`; its numeric ID is not assumed. MogFocus
+  allocates an unused ID after the registered tab count and places its tab directly
+  after Campsites, ahead of other appended tabs. It uses the native selected/disabled
+  states and native width fitting. Secure post-hooks maintain anchors/fonts after
+  native tab layout. Existing page functions are never overwritten.
+- `Mainline/Blizzard_Collections.lua`: `CollectionsJournal_UpdateSelectedTab` hides
+  native pages for other IDs and emits `CollectionsJournal.TabSet(journal, id)`.
+  MogFocus uses `EventRegistry:RegisterCallback` to toggle its content. Native
+  page restoration remains Blizzard's responsibility. It restores the native
+  Wardrobe ID in `petJournalTab` while its own tab is active, avoiding a stale
+  addon-dependent tab ID at next login. Slash/minimap use `ShowUIPanel` and
+  `CollectionsJournal_SetTab`; all entries target the same tracker.
+- `Shared/Blizzard_Wardrobe_Sets.lua`, `WardrobeSetsScrollFrameButtonMixin:OnClick`:
+  right-click uses `MenuUtil.CreateContextMenu(self, ...)` with tag
+  `MENU_WARDROBE_SETS_SET`. The owner has the CURRENT recycled row's base `setID`.
+  `Menu.ModifyMenu` appends actions; no row OnClick or Blizzard favorite action is
+  replaced. Snapshot numeric IDs when the menu opens. A group requires explicit
+  variant selection instead of using an unrelated globally selected detail set.
+- `Blizzard_TransmogShared/Blizzard_TransmogShared.lua`: the provider adds the base
+  set to `C_TransmogSets.GetVariantSets(baseID)`. MogFocus does the same, deduplicates
+  real IDs and respects `hiddenUntilCollected` / `collected`. Blizzard comments
+  explicitly state that variant replies are already filtered for hidden visibility.
+  `GetAllSets()` builds the cross-class catalog without mutating Blizzard's class,
+  search, PvE/PvP or collected filters. `classMask` drives the local class filter;
+  `validForCharacter` is not used to discard another class's sets. Raid lookup
+  is asynchronous optional enrichment, never an admission test.
+- `/mogfocus catalogcheck` compares the catalog with `GetBaseSets()` plus variants
+  under CURRENT native filters. This is a real ID audit when run in WoW; the
+  build environment verifies the comparison algorithm with fixtures, not live data.
+- `Blizzard_Menu/11_0_0_MenuImplementationGuide.lua`: `Menu.ModifyMenu`,
+  `description:AddInitializer`, and `button.fontString:SetFontObject` are supported
+  extension points. Only MogFocus-created menu descriptions receive private fonts.
+- `Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua`:
+  `TooltipDataProcessor.AddTooltipPostCall(AllTypes, callback)` reapplies fonts after
+  asynchronous data processing, guarded to the PRIVATE MogFocus tooltip only.
+
+Rozhraní používá nativní záložku a původní herní nabídku, bez přepsání jejich
+obsluhy. Testy mimo hru nenahrazují kontrolu taintu, vykreslení, skutečné viditelnosti
+a úplnosti setů na účtu. Postup pro ověření je v TESTING.md.

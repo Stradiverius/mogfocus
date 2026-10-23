@@ -16,18 +16,21 @@ function M:Debug()
 end
 
 function M:Notify(set)
-    self.noticeSetName = set.info.name
-    self:Print(self.L("NOTIFY", set.info.name))
+    self:Message("NOTIFY", set.info.name)
+    if self.Store.settings.sound then PlaySound(SOUNDKIT.UI_EPICLOOT_TOAST) end
+end
+
+function M:Message(key, value)
+    self.noticeKey, self.noticeValue = key, value
     if not self.notice then
         self.notice = self.UI:Panel(UIParent); self.notice:SetSize(520, 65); self.notice:SetPoint("TOP", 0, -130)
         self.notice:SetFrameStrata("HIGH"); self.notice.text = self.UI:Text(self.notice, "", true)
         self.notice.text:SetPoint("TOPLEFT", 16, -12); self.notice.text:SetWidth(488)
     end
-    self.notice.text:SetText(self.L("NOTIFY", set.info.name)); self.notice:Show()
+    self.notice.text:SetText(self.L(key, value)); self.notice:Show()
     self.noticeGeneration = (self.noticeGeneration or 0) + 1
     local generation = self.noticeGeneration
     C_Timer.After(5, function() if generation == self.noticeGeneration then self.notice:Hide() end end)
-    if self.Store.settings.sound then PlaySound(SOUNDKIT.UI_EPICLOOT_TOAST) end
 end
 
 function M:Refresh(invalidate, isRetry)
@@ -64,6 +67,7 @@ end
 function M:StartCatalog()
     if catalogTimer then return end
     self.Collection:BeginCatalog()
+    self.UI:RenderCatalog() -- IDs are available before the optional source scan.
     catalogTimer = C_Timer.NewTicker(.06, function()
         if not self.UI.frame or not self.UI.frame:IsShown() or self.UI.view ~= "catalog" then
             catalogTimer:Cancel(); catalogTimer = nil; return
@@ -98,7 +102,7 @@ for _, event in ipairs({ "TRANSMOG_COLLECTION_UPDATED", "TRANSMOG_COLLECTION_SOU
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 == addon and IsLoggedIn() then M:Initialize() end
-        if arg1 == "Blizzard_Collections" and M.ready then M.Integration:Wardrobe() end
+        if arg1 == "Blizzard_Collections" and M.ready then M.Integration:Collections() end
     elseif event == "PLAYER_LOGIN" then M:Initialize()
     elseif event == "PLAYER_REGEN_ENABLED" then if M.ready then M.Options:Register(); M.Integration:Update() end
     elseif M.ready then
@@ -116,6 +120,14 @@ SLASH_MOGFOCUS1 = "/mogfocus"
 SlashCmdList.MOGFOCUS = function(message)
     local command = string.lower((message or ""):match("^%s*(.-)%s*$"))
     if command == "debug" then M:Debug()
+    elseif command == "catalogcheck" then
+        if not M.ready then M:Print(M.L(M.blocked or "NO_PROFILE")); return end
+        local count, missing = M.Collection:AuditCatalog()
+        M:Print(M.L("CATALOG_AUDIT", count, #missing))
+        if #missing > 0 then
+            local ids = {}; for _, id in ipairs(missing) do ids[#ids + 1] = tostring(id) end
+            M:Print(table.concat(ids, ", "))
+        end
     elseif command == "options" then M.Options:Open()
     else M.UI:Toggle() end
 end

@@ -1,5 +1,5 @@
 local _, M = ...
-M.version = "0.1.0"
+M.version = "0.2.0"
 M.schema = 2
 M.targetBuild = "12.1.5.70529"
 M.modules = {}

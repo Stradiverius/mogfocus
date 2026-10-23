@@ -113,3 +113,115 @@ C_TransmogCollection = {
     GetAppearanceSourceDrops = function(id) return mockDrops[id] end,
     GetSourceIcon = function() return 123 end,
 }
+
+-- Current Collections / Blizzard_Menu contracts, modeled for integration tests.
+function Frame:SetPoint(...) self.points = self.points or {}; self.points[#self.points + 1] = { ... } end
+function Frame:ClearAllPoints() self.points = {} end
+function Frame:GetPoint(index) return unpack((self.points or {})[index or 1] or {}) end
+function Frame:SetAllPoints(parent) self.allPoints = parent end
+local function anchoredSize(self, vertical)
+    if self.allPoints then return vertical and self.allPoints:GetHeight() or self.allPoints:GetWidth() end
+    local a, b = (self.points or {})[1], (self.points or {})[2]
+    if a and b and a[1] == "TOPLEFT" and b[1] == "BOTTOMRIGHT" and a[2] == b[2] then
+        if vertical then return a[2]:GetHeight() + a[5] - b[5] end
+        return a[2]:GetWidth() + b[4] - a[4]
+    end
+    return vertical and (self.height or 30) or (self.width or 100)
+end
+function Frame:GetWidth() return anchoredSize(self, false) end
+function Frame:GetHeight() return anchoredSize(self, true) end
+function Frame:GetName() return self.name end
+function Frame:SetID(id) self.id = id end
+function Frame:GetID() return self.id or 0 end
+function Frame:SetFont(path, size) self.fontPath, self.fontSize = path, size; return true end
+function Frame:SetFontObject(font) self.fontObject = font end
+function Frame:GetFontObject() return self.fontObject end
+function Frame:SetNormalFontObject(font) self.normalFont = font end
+function Frame:SetHighlightFontObject(font) self.highlightFont = font end
+function Frame:SetDisabledFontObject(font) self.disabledFont = font end
+function Frame:SetShadowColor() end
+function Frame:SetShadowOffset() end
+function Frame:GetFontString() return self.Text end
+function Frame:SetTitle(title) self.windowTitle = title end
+function Frame:NumLines() return self.lineCount or 0 end
+function Frame:ClearLines() self.lineCount = 0 end
+function Frame:AddLine(text)
+    self.lineCount = (self.lineCount or 0) + 1
+    local line = CreateFrame("FontString", self.name and (self.name .. "TextLeft" .. self.lineCount), self)
+    line:SetText(text)
+end
+function Frame:HookScript(name, fn)
+    local before = self.scripts[name]
+    self.scripts[name] = function(...) if before then before(...) end; fn(...) end
+end
+function CreateFont(name) return CreateFrame("Font", name) end
+local createFrame = CreateFrame
+function CreateFrame(kind, name, parent, template)
+    local frame = createFrame(kind, name, parent)
+    if template == "CollectionsJournalTab" then frame.Text = createFrame("FontString", nil, frame) end
+    return frame
+end
+function Frame:SetText(text) self.text = text; if self.Text then self.Text:SetText(text) end end
+function hooksecurefunc(name, callback)
+    local original = _G[name]
+    _G[name] = function(...) local result = { original(...) }; callback(...); return unpack(result) end
+end
+EventRegistry = { callbacks = {} }
+function EventRegistry:RegisterCallback(event, fn, owner)
+    self.callbacks[event] = self.callbacks[event] or {}
+    table.insert(self.callbacks[event], { fn = fn, owner = owner })
+end
+function EventRegistry:TriggerEvent(event, ...)
+    for _, entry in ipairs(self.callbacks[event] or {}) do entry.fn(entry.owner, ...) end
+end
+local function tabAt(j, id) return j.Tabs and j.Tabs[id] or _G[j:GetName() .. "Tab" .. id] end
+function PanelTemplates_AnchorTabs(j)
+    for id = 2, j.numTabs do local t = tabAt(j, id); t:ClearAllPoints(); t:SetPoint("TOPLEFT", tabAt(j, id - 1), "TOPRIGHT", 3, 0) end
+end
+function PanelTemplates_SetNumTabs(j, n) j.numTabs = n; PanelTemplates_AnchorTabs(j) end
+function PanelTemplates_UpdateTabs(j)
+    for id = 1, j.numTabs do
+        local tab = tabAt(j, id); tab.selected = id == j.selectedTab
+        tab:SetDisabledFontObject(GameFontHighlightSmall)
+    end
+end
+function PanelTemplates_ResizeTabsToFit(j, w) j.tabWidthBudget = w end
+function PanelTemplates_TabResize(tab) tab:SetWidth(90) end
+function PanelTemplates_GetSelectedTab(j) return j.selectedTab end
+function PanelTemplates_SetTab(j, id) j.selectedTab = id; PanelTemplates_UpdateTabs(j) end
+function SetCVar(key, value) mockCVars = mockCVars or {}; mockCVars[key] = value end
+function CollectionsJournal_SetTab(j, id)
+    PanelTemplates_SetTab(j, id)
+    for index, page in ipairs(j.pages) do page:SetShown(index == id) end
+    EventRegistry:TriggerEvent("CollectionsJournal.TabSet", j, id)
+end
+function ShowUIPanel(frame) frame:Show() end
+function HideUIPanel(frame) frame:Hide() end
+function CreateMockCollections(extraTabs)
+    local j = CreateFrame("Frame", "CollectionsJournal", UIParent); j:SetSize(703, 606); j:Hide()
+    j.pages = {}
+    for id = 1, 6 + (extraTabs or 0) do
+        local tab = CreateFrame("Button", "CollectionsJournalTab" .. id, j, "CollectionsJournalTab"); tab:SetID(id)
+        j.pages[id] = CreateFrame("Frame", nil, j)
+    end
+    j.WardrobeTab, j.WarbandScenesTab = _G.CollectionsJournalTab5, _G.CollectionsJournalTab6
+    WardrobeCollectionFrame = j.pages[5]
+    j.numTabs, j.selectedTab = 6 + (extraTabs or 0), 5
+    return j
+end
+C_AddOns.LoadAddOn = function(name)
+    if name == "Blizzard_Collections" and not CollectionsJournal then CreateMockCollections(1) end
+    return true
+end
+local MenuDescription = {}
+function MenuDescription:CreateButton(label, action)
+    local child = setmetatable({ label = label, action = action, children = {}, kind = "button", initializers = {} }, { __index = MenuDescription })
+    self.children[#self.children + 1] = child; return child
+end
+function MenuDescription:CreateTitle(label) local entry = self:CreateButton(label); entry.kind = "title"; return entry end
+function MenuDescription:CreateDivider() local entry = self:CreateButton(""); entry.kind = "divider"; return entry end
+function MenuDescription:AddInitializer(fn) table.insert(self.initializers, fn) end
+function NewMockMenu() return setmetatable({ children = {}, initializers = {} }, { __index = MenuDescription }) end
+Menu = { callbacks = {}, registrationCount = 0 }
+function Menu.ModifyMenu(tag, callback) Menu.callbacks[tag] = callback; Menu.registrationCount = Menu.registrationCount + 1 end
+C_TransmogSets.GetBaseSets = C_TransmogSets.GetAllSets

@@ -3,11 +3,11 @@ local T = { widgets = setmetatable({}, { __mode = "k" }) }
 M.Skins = T
 T.styles = {
     Warcraft = { bg = "Interface\\DialogFrame\\UI-DialogBox-Background", edge = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
-        panel = { .12, .10, .07, .98 }, card = { .18, .15, .10, 1 }, border = { .65, .49, .24, 1 }, text = { 1, .95, .82 }, accent = { 1, .78, .28 }, font = "GameFontNormal" },
+        panel = { .12, .10, .07, .98 }, card = { .18, .15, .10, 1 }, border = { .65, .49, .24, 1 }, text = { 1, .95, .82 }, accent = { 1, .78, .28 } },
     Obsidian = { bg = "Interface\\Buttons\\WHITE8X8", edge = "Interface\\Buttons\\WHITE8X8", edgeSize = 1,
-        panel = { .055, .065, .075, .99 }, card = { .12, .135, .15, 1 }, border = { .28, .30, .33, 1 }, text = { .93, .94, .96 }, accent = { .6, .75, .9 }, font = "GameFontHighlight" },
+        panel = { .055, .065, .075, .99 }, card = { .12, .135, .15, 1 }, border = { .28, .30, .33, 1 }, text = { .93, .94, .96 }, accent = { .6, .75, .9 } },
     Arcane = { bg = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark", edge = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12,
-        panel = { .08, .05, .23, .99 }, card = { .16, .10, .30, 1 }, border = { .62, .59, .85, 1 }, text = { .90, .91, 1 }, accent = { .68, .70, 1 }, font = "GameFontNormal" },
+        panel = { .08, .05, .23, .99 }, card = { .16, .10, .30, 1 }, border = { .62, .59, .85, 1 }, text = { .90, .91, 1 }, accent = { .68, .70, 1 } },
 }
 
 function T:Style()
@@ -29,6 +29,7 @@ end
 function T:Apply(widget, role)
     local s = self:Style()
     if role == "text" or role == "title" then
+        M.Fonts:Apply(widget)
         local color = role == "title" and s.accent or s.text
         widget:SetTextColor(unpack(color))
         return
@@ -38,7 +39,7 @@ function T:Apply(widget, role)
     widget:SetBackdropColor(unpack(role == "panel" and s.panel or s.card))
     widget:SetBackdropBorderColor(unpack(widget.selected and s.accent or s.border))
     if widget.caption then
-        widget.caption:SetFontObject(_G[s.font])
+        M.Fonts:Apply(widget.caption, "button")
         widget.caption:SetTextColor(unpack(s.text))
     end
     if not widget.trim then

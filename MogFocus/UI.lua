@@ -7,7 +7,8 @@ function U:Panel(parent, name)
 end
 
 function U:Text(parent, text, title)
-    local font = parent:CreateFontString(nil, "OVERLAY", title and "GameFontNormalLarge" or "GameFontHighlightSmall")
+    local font = parent:CreateFontString(nil, "OVERLAY")
+    M.Fonts:Apply(font, title and "title" or "text")
     font:SetJustifyH("LEFT"); font:SetJustifyV("TOP"); font:SetText(text or "")
     M.Skins:Register(font, title and "title" or "text")
     return font
@@ -73,7 +74,7 @@ function U:Row(list, height)
     end
     row:ClearAllPoints(); row:SetPoint("TOPLEFT", 0, -list.y); row:SetSize(list.width, height)
     row.title:ClearAllPoints(); row.title:SetPoint("TOPLEFT", 10, -9); row.title:SetWidth(list.width - 20)
-    row.title:SetFontObject(GameFontNormal)
+    M.Fonts:Apply(row.title, "button")
     row.body:ClearAllPoints(); row.body:SetPoint("TOPLEFT", 10, -31); row.body:SetWidth(list.width - 20)
     row.body:SetText(""); row.title:SetText(""); row.icon:Hide(); row.bar:Hide()
     for _, b in ipairs(row.actions) do b:Hide() end
@@ -123,20 +124,14 @@ function U:ExpansionChoices()
     return choices
 end
 
-function U:Create()
+function U:Create(parent)
     if self.frame then return end
-    local f = self:Panel(UIParent, "MogFocusFrame")
-    UISpecialFrames[#UISpecialFrames + 1] = "MogFocusFrame"
-    f:SetSize(1180, 740); f:SetPoint("CENTER"); f:SetFrameStrata("DIALOG")
-    f:SetClampedToScreen(true); f:EnableMouse(true); f:SetMovable(true); f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", function(frame) frame:StartMoving() end)
-    f:SetScript("OnDragStop", function(frame) frame:StopMovingOrSizing() end)
-    local scale = math.min(1, (UIParent:GetWidth() - 30) / 1180, (UIParent:GetHeight() - 30) / 740)
-    f:SetScale(math.max(.35, scale))
+    local f = self:Panel(parent, "MogFocusFrame")
+    f:SetAllPoints(parent); f:EnableMouse(true)
     self.frame = f
     f.title = self:Text(f, "MogFocus", true); f.title:SetPoint("TOPLEFT", 18, -16)
     f.character = self:Text(f, ""); f.character:SetPoint("TOPLEFT", 18, -44)
-    f.close = self:Button(f, M.L("CLOSE"), 85, function() f:Hide() end); f.close:SetPoint("TOPRIGHT", -12, -10)
+    f.close = self:Button(f, M.L("CLOSE"), 85, function() HideUIPanel(CollectionsJournal) end); f.close:SetPoint("TOPRIGHT", -12, -10)
     f.options = self:Button(f, M.L("OPTIONS"), 120, function() M.Options:Open() end); f.options:SetPoint("RIGHT", f.close, "LEFT", -6, 0)
     f.optionsIcon = f.options:CreateTexture(nil, "ARTWORK"); f.optionsIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
     f.optionsIcon:SetSize(16, 16); f.optionsIcon:SetPoint("LEFT", 5, 0)
@@ -201,7 +196,11 @@ function U:Create()
     end)
     self.modelNote = self:Text(self.detail, M.L("PREVIEW")); self.modelNote:SetPoint("TOPRIGHT", -12, -350); self.modelNote:SetWidth(205)
     self.detail.actions = {}
-    for i, spec in ipairs({ { "PIN", function() local p = M.Store.profile; p.pinned = p.pinned == self.selected and nil or self.selected; self:Render() end },
+    for i, spec in ipairs({ { "PIN", function()
+        local p = M.Store.profile
+        if p.pinned == self.selected then p.pinned = nil else p.pinned = self.selected end
+        self:Render()
+    end },
         { "UP", function() M.Store:Move(self.selected, -1); self:Render() end },
         { "DOWN", function() M.Store:Move(self.selected, 1); self:Render() end },
         { "REMOVE", function() M.Store:Remove(self.selected); self.selected = nil; M:Refresh() end } }) do
@@ -211,6 +210,7 @@ function U:Create()
     self.where = self:Scroll(f, 1110, 490); self.where.frame:SetPoint("TOPLEFT", 18, -215)
     self.catalog = self:Scroll(f, 1110, 426); self.catalog.frame:SetPoint("TOPLEFT", 18, -280)
     f.search = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
+    M.Fonts:Apply(f.search, "button")
     f.search:SetSize(390, 25); f.search:SetPoint("TOPLEFT", 24, -210); f.search:SetAutoFocus(false)
     f.search:SetScript("OnTextChanged", function() self.catalogPage = 1; if self.view == "catalog" then self:RenderCatalog() end end)
     f.search:SetScript("OnEscapePressed", function(box) box:ClearFocus() end)
@@ -241,18 +241,74 @@ function U:Create()
         if self.picker then self.picker:Hide() end
         self.modelSet, self.previewSources = nil, nil
     end)
+    f:SetScript("OnSizeChanged", function() self:Layout() end)
     f:Hide()
+    self:Layout()
 end
 
 function U:Toggle()
-    if not M.ready then M:Print(M.L(M.blocked or "NO_PROFILE")); return end
-    if InCombatLockdown() then M:Print(M.L("COMBAT")); return end
-    self:Create()
-    if self.frame:IsShown() then self.frame:Hide()
-    else
-        self.expansion = M.Store.profile.focus; self.view = "sets"; self.selected = M.Store.profile.pinned
-        self.frame:Show()
+    M.Integration:Open()
+end
+
+-- Fit the actual Collections content rectangle; keep fonts at readable native
+-- sizes instead of shrinking the former standalone 1180px window.
+function U:Layout()
+    if not self.frame or self.layingOut then return end
+    self.layingOut = true
+    local f = self.frame
+    local width, height = f:GetWidth(), f:GetHeight()
+    if width < 200 then width = CollectionsJournal:GetWidth() - 16 end
+    if height < 200 then height = CollectionsJournal:GetHeight() - 68 end
+    self.layoutWidth, self.layoutHeight = width, height
+    local function place(widget, x, y, w, h)
+        widget:ClearAllPoints(); widget:SetPoint("TOPLEFT", f, "TOPLEFT", x, -y)
+        if w then widget:SetWidth(w) end
+        if h then widget:SetHeight(h) end
     end
+    local function scroll(list, parent, x, y, w, h)
+        list.frame:ClearAllPoints(); list.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+        list.frame:SetSize(w, math.max(70, h)); list.width = w - 4; list.content:SetWidth(list.width)
+    end
+    f.title:Hide(); f.close:Hide()
+    place(f.character, 8, 12, width - 286)
+    place(f.focus, width - 270, 5, 262, 29)
+    for index, view in ipairs({ "sets", "where", "catalog" }) do place(f.tabs[view].button, 8 + (index - 1) * 118, 40, 112) end
+    place(f.options, width - 118, 40, 110)
+    place(f.version, width - 278, 40, 154)
+    place(f.expansion, 8, 76, math.min(240, width * .35))
+    place(f.makeFocus, math.min(240, width * .35) + 22, 76, width - math.min(240, width * .35) - 136)
+    place(f.refresh, width - 104, 76, 96)
+    place(f.status, 8, 110, width - 16)
+    place(f.note, 8, 148, width - 16)
+    place(f.next, width - 198, 144, 190)
+    local leftWidth, bodyY = math.floor(width * .30), 184
+    local bodyHeight = height - bodyY - 8
+    scroll(self.left, f, 8, bodyY, leftWidth - 18, bodyHeight)
+    local detailX = leftWidth + 20
+    self.detail:ClearAllPoints(); self.detail:SetPoint("TOPLEFT", f, "TOPLEFT", detailX, -bodyY)
+    local detailWidth = width - detailX - 8
+    self.detail:SetSize(detailWidth, bodyHeight)
+    self.detail.title:SetWidth(detailWidth - 20); self.detail.meta:SetWidth(detailWidth - 20)
+    self.previewWidth = math.max(126, math.min(185, math.floor(detailWidth * .31)))
+    self.partsWidth = detailWidth - self.previewWidth - 42
+    scroll(self.parts, self.detail, 8, 100, self.partsWidth, bodyHeight - 110)
+    self.model:SetWidth(self.previewWidth)
+    self.modelNote:SetWidth(self.previewWidth)
+    for index, button in ipairs(self.detail.actions) do
+        button:ClearAllPoints(); button:SetPoint("TOPRIGHT", self.detail, "TOPRIGHT", -8, -(bodyHeight - 108 + (index - 1) * 26))
+        button:SetSize(self.previewWidth, 24)
+    end
+    scroll(self.where, f, 8, bodyY, width - 36, bodyHeight)
+    place(f.search, 14, 184, math.min(280, width * .41), 25)
+    local filterWidth = (width - 32) / 3
+    for index, key in ipairs({ "CLASS", "RAID", "VARIANT" }) do place(f.catalogFilters[key], 8 + (index - 1) * (filterWidth + 8), 218, filterWidth, 30) end
+    local pagerX = math.min(280, width * .41) + 24
+    place(f.previousPage, pagerX, 184, 100)
+    place(f.nextPage, pagerX + 106, 184, 70)
+    place(f.page, pagerX + 184, 191, width - pagerX - 192)
+    scroll(self.catalog, f, 8, 258, width - 36, height - 266)
+    self.layingOut = nil
+    self:Render()
 end
 
 function U:Render()
@@ -276,6 +332,7 @@ function U:Render()
     f.note:SetText(summary.done and M.L("NEXT") or M.L("FILTER_NOTE"))
     local hasNext = _G["EXPANSION_NAME" .. (self.expansion + 1)] ~= nil
     f.next:SetShown(summary.done and self.view ~= "catalog" and hasNext)
+    f.note:SetWidth((self.layoutWidth or f:GetWidth()) - (f.next:IsShown() and 214 or 16))
     self.left.frame:SetShown(self.view == "sets"); self.detail:SetShown(self.view == "sets")
     self.where.frame:SetShown(self.view == "where"); self.catalog.frame:SetShown(self.view == "catalog")
     f.search:SetShown(self.view == "catalog")
@@ -334,7 +391,7 @@ function U:RenderSets(sets)
     self.left:Clear()
     if #visible == 0 then
         local row = self:Row(self.left, 125); row.title:SetText(M.L("EMPTY"))
-        local add = self:Action(row, 1, M.L("FIRST"), 230, function() self.view = "catalog"; self:Render(); M:StartCatalog() end)
+        local add = self:Action(row, 1, M.L("FIRST"), math.min(230, self.left.width - 20), function() self.view = "catalog"; self:Render(); M:StartCatalog() end)
         add:SetPoint("BOTTOMLEFT", 10, 12)
     end
     local selected
@@ -401,6 +458,7 @@ function U:PieceRow(list, piece, expansionID, extra, routes)
         C_Timer.After(4, function() if row.flash then row.flash:Stop(); row.icon:SetAlpha(1) end end)
     elseif row.flash then row.flash:Stop(); row.icon:SetAlpha(1) end
     row:SetScript("OnEnter", function()
+        local GameTooltip = M.Fonts:Tooltip()
         GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
         local source = M.Call(C_TransmogCollection, "GetAppearanceSourceInfo", piece.sourceID)
         if source and source.itemLink then GameTooltip:SetHyperlink(source.itemLink)
@@ -410,8 +468,9 @@ function U:PieceRow(list, piece, expansionID, extra, routes)
             if route.reference then GameTooltip:AddLine(M.L("REFERENCE", route.reference == "SOURCE_API" and M.L("SOURCE_API") or route.reference), .7, .7, .7, true) end
         end
         GameTooltip:Show()
+        M.Fonts:TooltipFonts(GameTooltip)
     end)
-    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row:SetScript("OnLeave", function() M.Fonts:Tooltip():Hide() end)
     return row
 end
 
@@ -439,7 +498,13 @@ function U:RenderDetail(set)
     d.missing:ClearAllPoints(); d.missing:SetPoint("TOPLEFT", 10, -missingY)
     local partsY = math.max(100, missingY + 34)
     self.parts.frame:ClearAllPoints(); self.parts.frame:SetPoint("TOPLEFT", 10, -partsY)
-    self.parts.frame:SetHeight(math.max(150, 500 - partsY))
+    self.parts.frame:SetHeight(math.max(80, d:GetHeight() - partsY - 8))
+    local previewY = math.max(80, metaY + d.meta:GetStringHeight() + 8)
+    local actionsY = d:GetHeight() - 108
+    local noteY = actionsY - math.max(34, self.modelNote:GetStringHeight()) - 6
+    self.model:ClearAllPoints(); self.model:SetPoint("TOPRIGHT", d, "TOPRIGHT", -8, -previewY)
+    self.model:SetHeight(math.max(1, noteY - previewY - 6))
+    self.modelNote:ClearAllPoints(); self.modelNote:SetPoint("TOPRIGHT", d, "TOPRIGHT", -8, -noteY)
     d.actions[1].caption:SetText(M.L(M.Store.profile.pinned == set.id and "UNPIN" or "PIN"))
     d.actions[2].caption:SetText(M.L("UP")); d.actions[3].caption:SetText(M.L("DOWN")); d.actions[4].caption:SetText(M.L("REMOVE"))
     d.actions[2]:SetEnabled(M.Store.settings.sort == "custom"); d.actions[3]:SetEnabled(M.Store.settings.sort == "custom")
@@ -531,7 +596,7 @@ function U:RenderCatalog()
     if self.filters.CLASS == nil then self.filters.CLASS = select(3, UnitClass("player")) or 0 end
     local f, collection = self.frame, M.Collection
     f.note:SetText(M.L("CATALOG_NOTE"))
-    f.status:SetText(M.L("CATALOG_SCAN", collection.scanIndex, collection.scanList and #collection.scanList or 0))
+    f.status:SetText(collection.catalogAvailable and M.L("CATALOG_SCAN", collection.scanIndex, collection.scanList and #collection.scanList or 0) or M.L("LOADING"))
     for key, b in pairs(f.catalogFilters) do
         local value = self.filters[key]
         if key == "CLASS" then local info = M.Call(C_CreatureInfo, "GetClassInfo", value or 0); value = info and info.className end
@@ -545,7 +610,7 @@ function U:RenderCatalog()
     local entries = {}
     for _, entry in pairs(collection.catalog) do
         local info, classID = entry.info, self.filters.CLASS
-        local classMatch = not classID or classID == 0 or info.classMask == 0 or math.floor(info.classMask / 2 ^ (classID - 1)) % 2 == 1
+        local classMatch = collection:MatchesClass(info, classID)
         local text = info.name .. " " .. (info.label or "") .. " " .. (info.description or "")
         for raid in pairs(entry.raids) do text = text .. " " .. raid end
         if info.expansionID == self.expansion and classMatch and (not self.filters.RAID or entry.raids[self.filters.RAID])
@@ -566,18 +631,18 @@ function U:RenderCatalog()
         local entry = entries[index]
         local info = entry.info
         local row = self:Row(self.catalog, 85)
-        row.title:SetWidth(820); row.title:SetText(info.name .. " · " .. (info.description or "") .. " · #" .. info.setID)
+        row.title:SetWidth(self.catalog.width - 138); row.title:SetText(info.name .. " · " .. (info.description or "") .. " · #" .. info.setID)
         local raids = {}; for raid in pairs(entry.raids) do raids[#raids + 1] = raid end; table.sort(raids)
-        row.body:SetWidth(820); row.body:SetText((info.label or "") .. " · " .. table.concat(raids, ", ") .. "\n" .. M.L("EXPANSION") .. ": " .. M.Expansion(info.expansionID))
+        row.body:SetWidth(self.catalog.width - 138); row.body:SetText((info.label or "") .. " · " .. (#raids > 0 and table.concat(raids, ", ") or M.L("UNKNOWN")) .. "\n" .. M.L("EXPANSION") .. ": " .. M.Expansion(info.expansionID))
         row.body:SetPoint("TOPLEFT", 10, -math.max(31, row.title:GetStringHeight() + 14))
         local height = math.max(85, row.title:GetStringHeight() + row.body:GetStringHeight() + 27)
         self.catalog.y = self.catalog.y + height - row:GetHeight(); row:SetHeight(height)
         local selected = M.Store:Contains(info.setID)
-        local add = self:Action(row, 1, M.L(selected and "REMOVE" or "ADD"), 160, function()
+        local add = self:Action(row, 1, M.L(selected and "REMOVE" or "ADD"), 114, function()
             if M.Store:Contains(info.setID) then M.Store:Remove(info.setID) else M.Store:Add(info) end
             M:Refresh()
         end); add:ClearAllPoints(); add:SetPoint("RIGHT", -14, 0)
     end
-    if #entries == 0 then local row = self:Row(self.catalog, 75); row.title:SetText(M.L("NO_MATCH")) end
+    if #entries == 0 then local row = self:Row(self.catalog, 75); row.title:SetText(M.L(collection.catalogAvailable and "NO_MATCH" or "LOADING")) end
     self.catalog:Finish()
 end

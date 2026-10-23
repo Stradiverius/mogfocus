@@ -142,13 +142,13 @@ test("verified current Tier 4 token chain and localized labels", function()
     eq(M.SourceData.items[16955][1].instanceID, 742) -- Original Onyxia helm now Nefarian.
 end)
 
-test("catalog admits raid primaries, separates variant IDs and excludes PvP/unknown", function()
+test("catalog includes raid, PvP and unknown sources without automatically tracking", function()
     reset(); fixture(10); fixture(11)
     mockSets[12] = { info = { setID = 12, name = "PvP", expansionID = 0, classMask = 1, collected = false },
         primary = { { appearanceID = 199, collected = false } } }
     mockSources[199] = { sourceID = 199, itemID = 99999, visualID = 99, invType = 1, sourceType = 9 }
     while M.Collection:ScanCatalogBatch() do end
-    assert(M.Collection.catalog[10]); assert(M.Collection.catalog[11]); eq(M.Collection.catalog[12], nil)
+    assert(M.Collection.catalog[10]); assert(M.Collection.catalog[11]); assert(M.Collection.catalog[12]); eq(#M.Store.profile.targets, 0)
 end)
 
 test("full TOC startup and UI wiring in both languages and all skins (mock only)", function()
@@ -171,8 +171,7 @@ test("full TOC startup and UI wiring in both languages and all skins (mock only)
     end
     M.Options:Open(); eq(mockCategory, 77)
     mockCombat = true; M.UI:Toggle(); assert(M.UI.frame:IsShown()); mockCombat = false
-    WardrobeCollectionFrame = CreateFrame("Frame", nil, UIParent)
-    M.Integration:Wardrobe(); assert(M.Integration.wardrobe)
+    M.Integration:Collections(); assert(M.Integration.tab)
     assert(M.Integration.minimap); M.Integration.minimap.scripts.OnEnter(M.Integration.minimap)
     M:Debug(); SlashCmdList.MOGFOCUS("options")
 end)

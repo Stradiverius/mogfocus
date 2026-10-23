@@ -109,6 +109,7 @@ end
 function C:BeginCatalog()
     if self.scanList and #self.scanList > 0 then return end
     local all = M.Call(C_TransmogSets, "GetAllSets") or {}
+    self.catalogAvailable = #all > 0
     local seen, seenBases, list = {}, {}, {}
     local function add(info)
         if info and info.setID and not seen[info.setID] then
@@ -128,7 +129,54 @@ function C:BeginCatalog()
         if (a.expansionID == expansion) ~= (b.expansionID == expansion) then return a.expansionID == expansion end
         return a.setID < b.setID
     end)
+    self.catalog = {}
+    for _, info in ipairs(list) do
+        -- Same hidden-until-collected rule used by Wardrobe variant menus.
+        -- Do not apply the CURRENT Blizzard class/search filters to GetAllSets.
+        if self:IsCatalogVisible(info) then
+            self.catalog[info.setID] = { info = info, raids = {}, sourcesPending = true }
+        end
+    end
     self.scanList, self.scanIndex = list, 0
+end
+
+function C:IsCatalogVisible(info)
+    return info and not (info.hiddenUntilCollected and not info.collected)
+end
+
+function C:MatchesClass(info, classID)
+    if not classID or classID == 0 then return true end
+    local mask = info.classMask
+    return type(mask) == "number" and (mask == 0 or math.floor(mask / 2 ^ (classID - 1)) % 2 == 1)
+end
+
+-- Snapshot real IDs for a group; GetVariantSets omits the base, unlike Blizzard's
+-- SetsDataProvider wrapper. Do not mutate the engine-owned tables.
+function C:Variants(baseID)
+    local seen, result = {}, {}
+    local function add(info)
+        if self:IsCatalogVisible(info) and info.setID and not seen[info.setID] then
+            seen[info.setID] = true; result[#result + 1] = info
+        end
+    end
+    add(M.Call(C_TransmogSets, "GetSetInfo", baseID))
+    for _, info in ipairs(M.Call(C_TransmogSets, "GetVariantSets", baseID) or {}) do add(info) end
+    table.sort(result, function(a, b) return a.setID < b.setID end)
+    return result
+end
+
+function C:AuditCatalog()
+    self:BeginCatalog()
+    local expected, missing, count = {}, {}, 0
+    for _, base in ipairs(M.Call(C_TransmogSets, "GetBaseSets") or {}) do
+        for _, info in ipairs(self:Variants(base.setID)) do expected[info.setID] = true end
+    end
+    for id in pairs(expected) do
+        count = count + 1
+        if not self.catalog[id] then missing[#missing + 1] = id end
+    end
+    table.sort(missing)
+    return count, missing -- Current Blizzard filters; repeat with each class in-game.
 end
 
 function C:ScanCatalogBatch()
@@ -137,14 +185,16 @@ function C:ScanCatalogBatch()
         if self.scanIndex >= #self.scanList then return false end
         self.scanIndex = self.scanIndex + 1
         local info = self.scanList[self.scanIndex]
-        local set, raids = self:Read(info.setID), {}
-        for _, piece in ipairs(set.pieces) do
-            for _, route in ipairs(M.Sources:Resolve(piece, info.expansionID, true)) do
-                if route.verified and route.raid then raids[route.raid] = true end
+        local entry = self.catalog[info.setID]
+        local set, raids = entry and self:Read(info.setID), {}
+        if set then
+            for _, piece in ipairs(set.pieces) do
+                for _, route in ipairs(M.Sources:Resolve(piece, info.expansionID, true)) do
+                    if route.verified and route.raid then raids[route.raid] = true end
+                end
             end
+            entry.raids, entry.sourcesPending = raids, set.status ~= "ready"
         end
-        -- A raid primary source is evidence. PvP labels and name matching are not.
-        if next(raids) then self.catalog[info.setID] = { info = info, raids = raids } end
     end
     return self.scanIndex < #self.scanList
 end

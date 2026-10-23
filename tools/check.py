@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from lupa.lua51 import LuaRuntime
+from fontTools.ttLib import TTFont
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDON = ROOT / "MogFocus"
@@ -28,6 +29,15 @@ for chunk in chunks:
     chunk("MogFocus", namespace)
 lua.globals().M = namespace
 lua.execute((ROOT / "tests/test.lua").read_text())
+lua.execute((ROOT / "tests/update.lua").read_text())
+
+combat_lua = LuaRuntime()
+combat_lua.execute((ROOT / "tests/wow_mock.lua").read_text())
+combat_namespace = combat_lua.table()
+for name in files:
+    combat_lua.eval("function(s) return assert(loadstring(s)) end")((ADDON / name).read_text())("MogFocus", combat_namespace)
+combat_lua.globals().M = combat_namespace
+combat_lua.execute((ROOT / "tests/combat.lua").read_text())
 
 # Literal localization usages and runtime changelog parity.
 keys = set(namespace.locales.en.keys())
@@ -48,6 +58,23 @@ for language in ("en", "cs"):
     for category in ("features", "changes", "fixes"):
         assert namespace.locales[language][release[category]] in markdown, f"Changelog drift: {language}/{category}"
 print(f"PASS localization: {len(keys)} keys per language; placeholders and bilingual changelog")
+
+sample = "Příliš žluťoučký kůň úpěl ďábelské ódy. ČEŠTINA: ĚŠČŘŽÝÁÍÉŮÚĎŤŇ."
+characters = set(sample + " ✓★•−→…")
+characters.update("„“áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ")
+for key in keys:
+    characters.update(namespace.locales.cs[key])
+font_paths = list((ADDON / "Fonts").glob("*.ttf"))
+assert {p.name for p in font_paths} == {"DejaVuSans.ttf", "DejaVuSans-Bold.ttf"}
+for path in font_paths:
+    with TTFont(path) as font:
+        cmap = font.getBestCmap()
+        missing = {c for c in characters if not c.isspace() and ord(c) not in cmap}
+        assert not missing, f"{path.name}: missing glyphs {missing}"
+    print(f"PASS font Unicode coverage: {path.name}, {len(characters)} characters")
+assert (ADDON / "LICENSES/DejaVu.txt").is_file()
+for path in (ADDON / "UI.lua", ADDON / "Skins.lua"):
+    assert "GameFont" not in path.read_text(), f"Global FontObject restored in {path}"
 
 # Optional source-contract check against the verified Blizzard UI checkout.
 if len(sys.argv) > 1:

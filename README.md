@@ -1,194 +1,178 @@
-# MogFocus 0.1.0
+# MogFocus 0.2.0 — WoW Retail
 
-Skutečný addon v Lua pro **World of Warcraft Retail**, určený ke sledování ručně
-vybraných raidových transmog setů jednotlivých postav. Nejde o addon pro Classic
-klienty. První vydání vyžaduje ověření přímo ve hře; offline testy nejsou herní test.
+[Download / stáhnout ZIP](https://github.com/Stradiverius/mogfocus/raw/refs/heads/main/dist/MogFocus-0.2.0.zip)
 
 ## Česky
 
-### Instalace a verze klienta
+MogFocus sleduje ručně vybrané transmog sety a jednotlivé varianty pro každou
+postavu zvlášť. Katalog nyní zahrnuje raidové i ostatní sety, které poskytuje
+Blizzard Sets. Znalost zdroje není podmínkou výběru. Addon nemá povinné knihovny,
+backend ani externí účet. Je určen pro Retail, nikoliv klienty Classic.
 
-1. Ukončete hru. Rozbalte `MogFocus-0.1.0.zip` do
+### Instalace a aktualizace
+
+1. Ukončete hru a zálohujte
+   `WTF/Account/<účet>/SavedVariables/MogFocus.lua`.
+2. Rozbalte `MogFocus-0.2.0.zip` do
    `World of Warcraft/_retail_/Interface/AddOns/`.
-2. Výsledná cesta musí být `Interface/AddOns/MogFocus/MogFocus.toc`, nikoliv
-   `MogFocus/MogFocus/MogFocus.toc`. Žádné další addony ani knihovny nejsou potřeba.
-3. Na obrazovce postav povolte MogFocus. Po přihlášení použijte `/mogfocus`.
-4. Cílový build je **12.1.5.70529**, Interface **120105**, ověřený proti zdrojům
-   Blizzard UI uvedeným v [docs/API.md](docs/API.md). `/mogfocus debug` vypíše
-   skutečnou verzi vašeho klienta i dostupnost API. Verzi lze zjistit také příkazem
-   `/dump GetBuildInfo()`. Nesoulad klienta a `.toc` vyžaduje nové ověření API,
-   nikoli jen přepsání čísla nebo ignorování označení zastaralého addonu.
+3. Výsledná cesta je `Interface/AddOns/MogFocus/MogFocus.toc`. ZIP má právě jednu
+   kořenovou složku `MogFocus`, včetně fontů a licencí. Nevytvářejte druhou vnořenou
+   složku. Při aktualizaci nemažte SavedVariables.
+4. Povolte MogFocus v seznamu addonů. Cílový klient je **12.1.5.70529**, Interface
+   **120105**; skutečnou verzi zjistíte `/mogfocus debug` nebo `/dump GetBuildInfo()`.
+   Při jiném buildu ověřte API, nepřepisujte pouze číslo v `.toc`.
 
-### Používání
+Verze 0.2.0 zachovává schéma 2, GUID profily, vybrané varianty, pořadí, připnutí,
+aktuální expanzi i všechna nastavení verze 0.1.0. Načtení katalogu nepřidává cíle.
 
-- Otevřete **Collections → Appearances** a tlačítko **MogFocus** vedle záložky Sets.
-  Používáme samostatné tlačítko, aby nevznikaly kolize s interními ID záložek Blizzardu.
-  Funguje také ikona helmy u minimapy a `/mogfocus`.
-- Nová postava nemá žádné cíle. Klikněte na **Vybrat první set** nebo **Přidat sety**.
-  Katalog se dávkově načítá pouze při zobrazení; nabízí filtry expanze, classy,
-  raidu a varianty a hledání podle herních názvů. Zobrazuje pouze sety s doloženým
-  raidovým původem primárních částí. Výchozí classa je classa aktuální postavy.
-- Každá obtížnost má vlastní `setID`. Přidání Normal nepřidá Heroic nebo Mythic.
-  Opětovným kliknutím lze cíl odebrat. Změna katalogového filtru expanze nezmění
-  aktuální cíl. Použijte **Nastavit jako aktuální cíl** nebo horní **Aktuální cíl**.
-- **Moje sety** obsahují jen cíle této postavy v zobrazené expanzi. Lze připnout
-  jeden cíl a posouvat pořadí nahoru/dolů při vlastním řazení. Souhrn popisuje
-  pouze váš výběr. Dobrovolný přechod k další expanzi žádné sety nepřidává.
-- Detail ukazuje získané vzhledy, chybějící části, sloty a zdroje přímo v řádcích.
-  Názvy předmětů se načítají asynchronně. `? / ?` znamená neúplná data, ne nulový
-  postup. **Obnovit** znovu načte stav a umožní opakovat nedostupná item data.
-- **Kam jít** seskupí chybějící vzhledy podle doložených raidů. Kliknutím skupinu
-  rozbalíte. Počet v každém raidu je bez duplicit napříč sety. Alternativní raidy
-  jsou možnosti získání stejného vzhledu; jejich počty nesčítejte jako povinnosti.
-  Neověřené zdroje zůstávají ve zvláštní skupině. Journal lze otevřít pouze pro
-  lokálně ověřené ID instance/bosse. Textové drop údaje API takové ID neobsahují.
-- 3D náhled obléká pouze model vaší postavy. Tažením se otáčí, kolečkem přibližuje;
-  nepoužívá API pro aplikaci skutečného transmogu. Podporu konkrétních modelů,
-  ras a nezískaných vzhledů je nutné ověřit ve hře.
-- **Settings → AddOns → MogFocus**, tlačítko nastavení v trackeru, pravý klik
-  na minimapu nebo `/mogfocus options` otevřou nastavení. Jazyk a skin mění jen
-  zobrazení. Levý klik na minimapu otevře tracker; přetažením se uloží úhel ikony.
-- Kliknutím na verzi nebo **Co je nového** v nastavení otevřete changelog.
-  Hvězdička novinek zmizí po přečtení.
+### Otevření a používání
 
-Výchozí nastavení: čeština, Warcraft, viditelná minimapa, standardní karty,
-vlastní pořadí, viditelné dokončené sety, všechny části, oznámení zapnutá,
-zvuk vypnutý. Obsidian používá barvu classy, Arcane modrofialové panely a světlé
-detaily. Volba omezení animací zastaví zvýraznění nově získaných ikon.
+- Otevřete **Collections → MogFocus** ve spodní hlavní řadě ihned napravo od
+  **Campsites**. Tracker je přímo v okně Collections. Přepnutí zpět na Appearances,
+  Mounts nebo jinou záložku zobrazí původní stránku. Původní tlačítko překrývající
+  postup nahoře v Appearances bylo odstraněno.
+- Ikona helmy u minimapy i `/mogfocus` otevřou stejnou záložku. Levý klik ji
+  přepíná, pravý klik otevře nastavení; tažením ikony uložíte polohu. Nové otevření
+  trackeru a Settings/Journal je v boji odloženo nebo odmítnuto krátkou zprávou.
+- Nová postava začíná bez cílů. **Vybrat první set / Přidat sety** otevře katalog.
+  Výchozí filtr je aktuální classa; lze vybrat jinou classu i všechny. Expanze,
+  varianta, hledání a nepovinný filtr konkrétního raidu zůstávají dostupné.
+- Katalog načte ID a názvy bez čekání na dropy. Podrobnosti zdrojů dohledává
+  dávkově a jen při otevření katalogu. Set bez známého zdroje lze normálně přidat.
+  Hidden-until-collected varianty respektují data Blizzardu. Výběr jedné varianty
+  nepřidá ostatní. Nezaškrtnuté sety se nikdy automaticky nesledují.
+- V původním **Appearances → Sets** klikněte pravým tlačítkem na set. Nabídka
+  zachová původní položky Blizzardu a doplní **Přidat do MogFocus**. U skupiny
+  nejprve zvolte konkrétní variantu v podnabídce MogFocus. Již sledovaná varianta
+  má stav **Již sledováno** a akci **Odebrat z MogFocus**. Přidání potvrdí krátké
+  oznámení. Aktuální expanze ani cíle jiných postav se nemění.
+- **Moje sety** obsahují pouze cíle této postavy ve zvolené expanzi. Výběr lze
+  připnout, odepnout, seřadit, skrýt po dokončení nebo odebrat. Prohlížení jiné
+  expanze nezmění uložený **Aktuální cíl**; použijte výslovnou změnu zaměření.
+- Detail zobrazuje skutečný počet získaných vzhledů, sloty, ikony, tooltipy a
+  zdroje. **Pouze chybějící** omezí seznam. `? / ?` je neúplná odpověď, ne 0/N.
+  **Obnovit** umožňuje opakovat načtení. Náhled obléká pouze samostatný model vaší
+  postavy, nepoužívá aplikaci transmogu. Tažením jej otočíte, kolečkem přiblížíte.
+- **Kam jít** seskupuje chybějící vzhledy podle doložených raidů a ostatních
+  zdrojů. V rámci raidu jsou počty bez duplicit. Alternativy jsou možnosti získání
+  stejného vzhledu, nikoliv další povinné dropy. Neznámé vazby mají stav
+  **Zdroj neověřen**. Journal se nabízí pouze u ověřených číselných ID.
+- Nastavení otevřete v **Settings → AddOns → MogFocus**, tlačítkem v trackeru,
+  pravým klikem na minimapu nebo `/mogfocus options`. Obsahuje češtinu/angličtinu,
+  Warcraft/Obsidian/Arcane, minimapu, hustotu karet, řazení, dokončené cíle,
+  chybějící části, oznámení, zvuk a omezení animací. Kliknutí na verzi nebo
+  **Co je nového** otevře dvojjazyčný changelog a odstraní značku novinek.
 
-### Data a omezení
+Vlastní rozhraní používá přibalený **DejaVu Sans** a vlastní FontObjects. Přepnutí
+skinu ani opětovné použití řádku nesmí obnovit font Blizzardu bez českých znaků.
+Nemění se globální fonty WoW. Názvy setů, bossů a předmětů zůstávají podle klienta.
+Licence je v `MogFocus/LICENSES/DejaVu.txt`, podrobnosti v [docs/FONTS.md](docs/FONTS.md).
 
-Účtová nastavení a profily podle GUID ukládá `MogFocusDB`. Dvě stejně pojmenované
-postavy ani dvě postavy stejné classy nesdílí cíle. Vzhledy vycházejí ze společné
-herní kolekce a příznaků dokončení konkrétního setu. Před aktualizací zálohujte
-`WTF/Account/<účet>/SavedVariables/MogFocus.lua` při ukončené hře. Tento soubor
-nemažte při běžné aktualizaci. Migrace jsou doplňující; novější neznámé schéma
-se neotevře ani neresetuje.
+### Diagnostika, rozsah dat a testování
 
-Lokální databáze má **229 položek**: Tier 1 a některé Tier 2 zdroje v Molten Core,
-současné Tier 2 dropy v Blackwing Lair (včetně původních Onyxia helem, dnes
-Nefarian) a všech 85 Tier 4 výměnných předmětů pro tehdejší classy/specy.
-Tier 4 rozlišuje Karazhan → The Curator / Prince Malchezaar,
-Gruul's Lair → High King Maulgar / Gruul a Magtheridon's Lair → Magtheridon.
-Zobrazuje konkrétní token a výměnu u Asuura / Arodise v Shattrathu, s podmínkou
-neutrální reputace. API doplňuje další raidové dropy podle konkrétního zdroje.
+`/mogfocus debug` vypíše verzi, build a dostupnost API bez osobních údajů.
+`/mogfocus catalogcheck` porovná ID aktuálního filtrovaného seznamu Blizzard Sets
+a jeho variant s katalogem MogFocus a vypíše chybějící ID. Pro ověření všech class
+opakujte příkaz po jejich výběru v původním Blizzard rozhraní; audit nemění filtry
+ani sledované cíle. Prázdný filtrovaný seznam není důkazem úplnosti.
 
-**Datové mezery:** tokeny mimo Tier 4, questy/prodejci bez lokální vazby, původní
-Naxxramas / obnovené Tier 3 a další zdroje bez drop záznamu API zatím nemají
-úplné lokální pokrytí. Takové části ukazují „Zdroj neověřen“; nezařazené sety
-bez doloženého primárního raidového zdroje nejsou v katalogu. Addon netvrdí, že
-tyto zdroje jsou nedostupné. Neobsahuje drop rates, lockouty ani plánovač tras.
-Pro úplný katalog všech historických raidových setů je třeba doplnit ověřená
-mapování. Kontrola údajů přímo v aktuálním klientu je stále nutná.
+Lokální databáze stále obsahuje 229 doložených mapování Classic a Tier 4, doplněných
+živými drop daty API. Ostatní tokeny, questy a prodejci mohou mít neověřené zdroje;
+**to již neomezuje katalog ani možnost výběru**. Podrobnosti a licence ATT jsou
+v [docs/SOURCES.md](docs/SOURCES.md).
 
-### Diagnostika a testy
-
-`/mogfocus debug` vypíše verzi, build, Interface a přítomnost funkcí API bez
-osobních údajů. Pro hlášení chyby přiložte tento výpis, kroky reprodukce, `setID`
-z katalogu a případnou Lua chybu. Checklist je v [docs/TESTING.md](docs/TESTING.md).
+Prošly automatické Lua 5.1 testy a kontroly znakových map obou fontů. **Běžící WoW
+klient nebyl k dispozici.** Vykreslení, úplnost ID na živém účtu, combat/taint,
+načítání modelů a kolize addonů ověřte podle [docs/TESTING.md](docs/TESTING.md).
 
 ## English
 
-### Installation and client version
+MogFocus tracks manually selected transmog set variants separately for each
+character. The catalog now includes raid and non-raid sets supplied by Blizzard
+Sets, across classes and expansions. Source metadata is optional. There are no
+required addons, libraries, backend or external accounts. Retail only.
 
-1. Exit WoW and extract `MogFocus-0.1.0.zip` into
-   `World of Warcraft/_retail_/Interface/AddOns/`.
-2. Check for `Interface/AddOns/MogFocus/MogFocus.toc` with no doubled directory.
-   No other addon, library, web account or service is required.
-3. Enable MogFocus on the character screen and enter `/mogfocus` after login.
-4. The target is **Retail 12.1.5.70529**, Interface **120105**. Source verification
-   is recorded in [docs/API.md](docs/API.md). `/mogfocus debug` reports your actual
-   client version and API availability; `/dump GetBuildInfo()` also shows the build.
-   A different client requires API validation, not merely changing the TOC number.
+### Install / update
+
+Exit WoW and back up `WTF/Account/<account>/SavedVariables/MogFocus.lua`. Extract
+`MogFocus-0.2.0.zip` into `World of Warcraft/_retail_/Interface/AddOns/`; the final
+path must be `Interface/AddOns/MogFocus/MogFocus.toc`, without doubled nesting.
+Fonts and licenses are bundled. Enable MogFocus and keep your SavedVariables on
+upgrade. Version 0.2.0 retains schema 2 and all previous GUID-keyed goals, order,
+pin, focus and account options. Catalog loading never selects goals automatically.
+
+Target: **Retail 12.1.5.70529**, Interface **120105**. Check your actual version
+with `/mogfocus debug` or `/dump GetBuildInfo()`. Different builds need API
+validation, not just a changed TOC number.
 
 ### Use
 
-Open **Collections → Appearances → MogFocus**, beside the Sets tab. A separate
-button avoids collisions with Blizzard's tab IDs. The helmet minimap icon and
-`/mogfocus` also open the tracker. First login starts with an empty character
-profile. Choose **Choose first set** / **Add sets**, then search and filter by
-expansion, class, raid and variant. The class defaults to your current class.
-The catalog scans in batches while visible and admits only sets with evidence
-of a raid primary source.
+Open the bottom **Collections → MogFocus** tab immediately after **Campsites**.
+Its tracker lives inside Collections and restores the original page when another
+tab is selected. The overlapping Wardrobe header button is gone. The minimap
+helmet and `/mogfocus` open this same tab. Minimap right click opens options;
+dragging saves its position. UI creation/opening is guarded during combat.
 
-Each variant is a separate `setID`; selecting Normal never adds other variants.
-Expansion browsing is separate from **Current focus**. Use **Make current focus**
-to persist the browsed expansion. You may prepare later goals without changing
-the current focus. On reopening, the tracker displays your saved focus.
+New characters start empty. **Choose first set / Add sets** opens the catalog,
+initially filtered to the current class. Choose another class or all classes,
+expansion, variant, search text, or optionally a known raid. Catalog IDs are
+available before optional source lookups. Unknown-source and non-raid sets remain
+selectable; hidden-until-collected visibility follows Blizzard metadata. Selecting
+one variant never selects the group.
 
-**My sets** shows this character's selected goals in the filtered expansion.
-Pin one main goal; move cards up/down in custom sorting mode. Summary percentages
-refer to selected goals only. The optional next-expansion action adds no goals.
-The detail shows variable appearance counts, slots, tooltips, missing status,
-and visible acquisition routes. `? / ?` is an incomplete API response, not zero
-progress. **Refresh** retries collection and item data.
+Right-click a row in the original **Appearances → Sets** list to **Add to MogFocus**.
+A group opens a MogFocus variant submenu requiring an explicit choice. Tracked
+variants show **Already tracked / Remove from MogFocus**. A short notification
+confirms the action; other characters and saved expansion focus stay unchanged.
+The original Blizzard menu actions and left-click behavior remain in place.
 
-**Where to go** groups missing appearances by verified raid. Expand each group
-to see parts, sets, bosses, difficulties and token exchanges. Counts within a
-raid deduplicate appearances across goals. Alternative raids are options for the
-same appearance, not additional required drops. Unknown sources remain visible.
-Journal buttons exist only when verified instance/encounter IDs are available;
-the live drop API supplies names without IDs.
+**My sets** shows only this character's chosen goals in the browsed expansion.
+Pin/unpin, manually reorder, sort by progress/raid, hide completed or remove goals.
+Browsing and saved **Current focus** are independent. Detail rows show collection
+counts, icons, slots, tooltips and acquisition information; **Missing only** filters
+the parts. `? / ?` means incomplete data, never zero progress. **Refresh** retries
+loading. The rotatable/zoomable character preview changes only its own model.
 
-The preview dresses a separate model of your character, including uncollected
-source IDs where supported. Drag to rotate and use the wheel to zoom. It never
-applies a transmog to your character. Model/geometry behavior still needs in-game
-validation for different races and sources.
+**Where to go** groups missing appearances by verified raid or other source,
+deduplicates within a raid and identifies alternative acquisition routes. Missing
+metadata says **Source unverified**. Journal links require verified numeric IDs.
 
-Open **Settings → AddOns → MogFocus**, the tracker settings button, minimap right
-click, or `/mogfocus options`. Minimap left click opens the tracker; drag to save
-its angle. Account options include language, three skins, minimap visibility,
-card density, ordering, completed goals, missing-only parts, notifications, sound,
-and reduced animations. Click the version / **What's new** to read the changelog
-and clear its unread marker. Names supplied by the game remain in client language.
+Use native **Settings → AddOns → MogFocus**, the tracker settings button, minimap
+right click or `/mogfocus options`. Options retain both languages, all three
+skins, minimap, density, sort order, completed goals, missing parts, notifications,
+sound and reduced animations. Click the version / **What's new** for the bilingual
+changelog and to clear its unread marker.
 
-Defaults: Czech, Warcraft, visible minimap icon, standard cards, custom order,
-completed sets visible, all parts visible, notifications on, sound off. Obsidian
-uses a flat graphite palette with class accents; Arcane uses blue/violet textured
-panels and silver accents. Reducing animations stops new-piece icon highlighting.
+Bundled **DejaVu Sans** and private FontObjects provide Czech glyphs throughout
+the addon, including reused rows and context-menu additions, without changing any
+global WoW font. Game-supplied names remain in client language. See
+[docs/FONTS.md](docs/FONTS.md) and the bundled license.
 
-### Persistence, coverage and diagnostics
+### Diagnostics and validation
 
-`MogFocusDB` stores account options and separate GUID-keyed goals, order, pin,
-focus and notification history. Collection ownership remains game-wide, using
-Blizzard's set completion flags. Back up
-`WTF/Account/<account>/SavedVariables/MogFocus.lua` while WoW is closed before
-updating. Do not delete it on upgrade. Migrations preserve existing/unknown fields;
-a future schema is refused without reset.
+`/mogfocus catalogcheck` compares real IDs in the **currently filtered** Blizzard
+Sets view and its variants against MogFocus. Repeat with each class selected in
+Blizzard's UI to audit all classes. The command changes neither filters nor goals;
+zero native results do not establish completeness. `/mogfocus debug` reports the
+client and required APIs without personal data.
 
-The local database covers **229 items**: Molten Core Tier 1 and Tier 2 parts,
-current Blackwing Lair Tier 2 drops (including original Onyxia helms now dropped
-by Nefarian), and all 85 Tier 4 exchange items. Tier 4 routes distinguish Karazhan,
-Gruul's Lair and Magtheridon's Lair, the individual boss and token, and the Asuur /
-Arodis exchanges in Shattrath requiring neutral reputation. Live collection drop
-data supplements those records. See [docs/SOURCES.md](docs/SOURCES.md) for provenance.
-
-**Known coverage gaps:** tokens beyond Tier 4, vendors/quests without local
-mappings, original Naxxramas / restored Tier 3, and sources without live drop
-metadata. Such parts say **Source unverified**. Sets without any verified raid
-primary source cannot yet enter the catalog. This does not assert unavailability.
-A complete historical raid catalog needs additional verified mappings. There are
-no invented drop rates, route planning, lockouts or automation.
-
-Use `/mogfocus debug` for version, build and API checks without personal data.
-Report its output, reproduction steps, the catalog `setID` and Lua error text.
-See [docs/TESTING.md](docs/TESTING.md) for required client checks.
+The existing 229 Classic / Tier 4 mappings and live drop API remain unchanged.
+Unknown token, vendor and quest routes **no longer restrict catalog membership**;
+see [docs/SOURCES.md](docs/SOURCES.md). **No WoW client was executed.** Automated
+checks cover logic, font cmaps and UI wiring; rendering, live-account catalog
+parity, combat/taint, models and addon collisions still need the
+[in-game checklist](docs/TESTING.md).
 
 ## Development / vývoj
-
-Python 3.12 and the optional development dependency `lupa==2.8` run the Lua 5.1
-checks; none of this tooling ships as a runtime dependency.
 
 ```sh
 python3 -m venv /tmp/mogfocus-venv
 /tmp/mogfocus-venv/bin/pip install -r tools/requirements.txt
-/tmp/mogfocus-venv/bin/python tools/check.py
+/tmp/mogfocus-venv/bin/python tools/check.py /path/to/wow-ui-source
 /tmp/mogfocus-venv/bin/python tools/package.py
 ```
 
-Pass a `Gethe/wow-ui-source` checkout as the optional argument to `tools/check.py`
-to check the referenced API contracts against generated documentation.
-Source files load in TOC order. Saved data, localization, collection, acquisition
-sources, skins, UI, options and integration are separate modules. Future release
-changes must update the TOC/Bootstrap version, Lua changelog and bilingual Markdown
-changelog together. Packaging rejects checks that fail and verifies archive paths.
+The source checkout argument is optional. Tests use Lua 5.1 through Lupa and
+fontTools for the shipped TTF character maps; these are not runtime dependencies.
+`tools/render_changelog.py` regenerates Markdown from the runtime release data.
+Future releases must update both TOC/Bootstrap version and bilingual Lua changelog.

@@ -8,7 +8,7 @@ function O:Changed(key, value)
         for widget in pairs(M.Skins.widgets) do if widget.flash then widget.flash:Stop() end end
     end
     M.Skins:Refresh(); M.Integration:Update(); self:Refresh(); M.UI:RefreshText(); M.UI:Render()
-    if M.notice and M.notice:IsShown() then M.notice.text:SetText(M.L("NOTIFY", M.noticeSetName)) end
+    if M.notice and M.notice:IsShown() then M.notice.text:SetText(M.L(M.noticeKey, M.noticeValue)) end
     if self.changelog and self.changelog:IsShown() then self:RenderChangelog() end
 end
 
