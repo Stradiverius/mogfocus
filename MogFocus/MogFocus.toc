@@ -1,0 +1,21 @@
+## Interface: 120105
+## Title: MogFocus
+## Notes: Per-character raid appearance goals and verified acquisition sources.
+## Notes-csCZ: Osobní raidové transmog cíle a ověřené zdroje vzhledů.
+## Author: Stradiverius
+## Version: 0.1.0
+## SavedVariables: MogFocusDB
+## IconTexture: Interface\Icons\INV_Helmet_03
+
+Bootstrap.lua
+Locale.lua
+Store.lua
+Data\Sources.lua
+Sources.lua
+Collection.lua
+Changelog.lua
+Skins.lua
+UI.lua
+Options.lua
+Integration.lua
+Core.lua
