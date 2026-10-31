@@ -11,7 +11,7 @@ end
 
 function P:Queue(model)
     local s = model.mogPreview
-    if s.queued or not model:IsShown() or not s.id then return end
+    if s.queued or not model:IsVisible() or not s.id then return end
     local delay = self.delays[math.max(1, s.attempts)]
     if not delay then
         s.status = "unavailable"; self:Status(model, "PREVIEW_RETRY_HINT")
@@ -22,7 +22,7 @@ function P:Queue(model)
     C_Timer.After(delay, function()
         if generation ~= s.generation then return end
         s.queued = nil
-        if model:IsShown() and s.id and s.status == "loading" then self:Step(model) end
+        if model:IsVisible() and s.id and s.status == "loading" then self:Step(model) end
     end)
 end
 
@@ -43,7 +43,7 @@ function P:Create(parent, note)
         ambientIntensity = .8, ambientColor = CreateColor(.8, .8, .85), diffuseIntensity = .7, diffuseColor = CreateColor(1, 1, 1) })
     model:SetScript("OnModelLoaded", function()
         -- This can fire during SetUnit/TryOn. Never Undress recursively here.
-        if not s.id or s.running or not model:IsShown() then return end
+        if not s.id or s.running or not model:IsVisible() then return end
         if s.status ~= "loading" and self:CheckOutfit(model) then s.status, s.attempts = "loading", 0 end
         if s.status == "loading" then self:Queue(model) end
     end)
@@ -87,12 +87,12 @@ function P:Select(model, id, force)
     s.unitSet, s.cleared, s.queued, s.suspended, s.signature = nil, nil, nil, nil, nil
     model:SetAlpha(0)
     self:Status(model, "PREVIEW_LOADING")
-    if id and model:IsShown() then self:Step(model) end
+    if id and model:IsVisible() then self:Step(model) end
 end
 
 function P:Step(model)
     local s = model.mogPreview
-    if s.running or not s.id or not model:IsShown() then return end
+    if s.running or not s.id or not model:IsVisible() then return end
     s.running = true; s.attempts = s.attempts + 1
     local ok, pending = pcall(self.Dress, self, model)
     s.running = nil -- An API exception must never latch the preview shut.
@@ -171,7 +171,7 @@ end
 function P:UnitChanged()
     for model in pairs(self.models) do
         if model.mogPreview.id then
-            if model:IsShown() then self:Retry(model) else model.mogPreview.suspended = true end
+            if model:IsVisible() then self:Retry(model) else model.mogPreview.suspended = true end
         end
     end
 end
@@ -179,7 +179,7 @@ end
 function P:Refresh()
     for model in pairs(self.models) do
         local s = model.mogPreview
-        if model:IsShown() and s.note and s.message then self:Status(model, s.message, unpack(s.args or {})) end
+        if model:IsVisible() and s.note and s.message then self:Status(model, s.message, unpack(s.args or {})) end
     end
     if self.window and self.window:IsShown() then self:RenderWindow() end
 end

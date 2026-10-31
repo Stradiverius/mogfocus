@@ -65,7 +65,8 @@ function Frame:HookScript(name, fn)
     self.scripts[name] = function(...) if original then original(...) end; fn(...) end
 end
 function Frame:RegisterEvent(event) self.events[event] = true end
-function Frame:IsShown() return not self.hidden and (not self.parent or self.parent:IsShown()) end
+function Frame:IsShown() return not self.hidden end
+function Frame:IsVisible() return self:IsShown() and (not self.parent or self.parent:IsVisible()) end
 function Frame:Show()
     local changed = self.hidden
     self.hidden = false

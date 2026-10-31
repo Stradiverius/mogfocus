@@ -103,6 +103,15 @@ test("hiding cancels pending work; reopening and model changes restore the set",
     mockSetUnitFailure = false; model:Show(); eq(model.mogPreview.status, "ready")
     local before = model.setUnitCalls
     M.Preview:UnitChanged(); eq(model.setUnitCalls, before + 1); assert(model.worn[501])
+    -- WoW IsShown remains true when an ancestor is hidden; only IsVisible
+    -- answers whether this model can actually be seen.
+    local parent = CreateFrame("Frame", nil, UIParent)
+    local child = M.Preview:Create(parent)
+    M.Preview:Select(child, 101); local dressed = child.setUnitCalls
+    parent:Hide(); assert(child:IsShown() and not child:IsVisible())
+    M.Preview:UnitChanged(); drain(); eq(child.setUnitCalls, dressed)
+    assert(child.mogPreview.suspended)
+    parent:Show(); child.scripts.OnShow(child); eq(child.setUnitCalls, dressed + 1)
 end)
 
 test("wrong-race or unequippable parts are reported as partial, never complete", function()
