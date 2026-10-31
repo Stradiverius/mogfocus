@@ -11,7 +11,7 @@ function I:TabFonts()
     tab:SetNormalFontObject(M.Fonts.objects.tabNormal)
     tab:SetHighlightFontObject(M.Fonts.objects.tabSelected)
     tab:SetDisabledFontObject(M.Fonts.objects[tab.isDisabled and "tabDisabled" or "tabSelected"])
-    local role = tab.isDisabled and "tabDisabled" or (PanelTemplates_GetSelectedTab(CollectionsJournal) == tab:GetID() and "tabSelected" or "tabNormal")
+    local role = tab.isDisabled and "tabDisabled" or (self.active and "tabSelected" or "tabNormal")
     M.Fonts:Apply(tab:GetFontString(), role)
 end
 
@@ -31,24 +31,51 @@ function I:LayoutTab()
     end
     self:TabFonts()
     PanelTemplates_TabResize(self.tab, 0)
-    PanelTemplates_ResizeTabsToFit(journal, journal:GetWidth() - 24)
+    -- Geometry only: our tab is deliberately outside the native tab registry.
+    PanelTemplates_ResizeTabsToFit(journal, journal:GetWidth() - 27 - self.tab:GetWidth())
 end
 
-function I:OnTab(journal, selected)
-    if journal ~= CollectionsJournal or not self.collectionsReady or not M.UI.ready then return end
-    local active = selected == self.tab:GetID()
-    local opening = active and not self.content:IsShown()
-    if active then
-        -- Do not persist an addon-dependent numeric tab ID in Blizzard's CVar.
-        SetCVar("petJournalTab", journal.WardrobeTab:GetID())
-        journal:SetTitle("MogFocus")
-        if opening then
-            M.UI.expansion, M.UI.view, M.UI.selected = M.Store.profile.focus, "sets", M.Store.profile.pinned
-        end
+function I:Deactivate(restoreNative)
+    self.active = false
+    if self.content then self.content:Hide() end
+    if self.cover then self.cover:Hide() end
+    if M.UI.frame then M.UI.frame:Hide() end
+    if not self.tab then return end
+    PanelTemplates_DeselectTab(self.tab); self:TabFonts()
+    if restoreNative then
+        local native = tabAt(CollectionsJournal, PanelTemplates_GetSelectedTab(CollectionsJournal))
+        if native and not native.isDisabled then PanelTemplates_SelectTab(native) end
+        if self.nativeTitle then CollectionsJournal:SetTitle(self.nativeTitle) end
     end
-    self.content:SetShown(active); M.UI.frame:SetShown(active)
-    if active then M.UI:Layout(); M:Refresh(true) end
+    self.nativeTitle = nil
+end
+
+function I:OnTab(journal)
+    if journal ~= CollectionsJournal or not self.collectionsReady or not M.UI.ready then return end
+    -- A genuine native click has already updated its own page and title.
+    self:Deactivate(false)
     self:LayoutTab()
+end
+
+function I:Activate()
+    if InCombatLockdown() then M:Print(M.L("COMBAT")); return end
+    if not self:Collections() then return end
+    local journal = CollectionsJournal
+    if not journal:IsShown() then securecallfunction(ShowUIPanel, journal) end
+    local opening = not self.active
+    if opening then
+        self.nativeTitle = journal:GetTitleText():GetText()
+        M.UI.expansion, M.UI.view, M.UI.selected = M.Store.profile.focus, "sets", M.Store.profile.pinned
+    end
+    self.active = true
+    -- Select/deselect change only tab visuals and button enable state. They do
+    -- not write selectedTab/numTabs/isDisabled or show/update native pages.
+    local native = tabAt(journal, PanelTemplates_GetSelectedTab(journal))
+    if native and not native.isDisabled then PanelTemplates_DeselectTab(native) end
+    PanelTemplates_SelectTab(self.tab); self:TabFonts()
+    journal:SetTitle("MogFocus")
+    self.cover:Show(); self.content:Show(); M.UI.frame:Show()
+    M.UI:Layout(); M:Refresh(true)
 end
 
 function I:Collections()
@@ -78,8 +105,9 @@ function I:BuildCollections(journal)
     if not self.showHooked then
         journal:HookScript("OnShow", function()
             if not self.collectionsReady then self:Collections() end
-            self:OnTab(journal, PanelTemplates_GetSelectedTab(journal))
+            self:LayoutTab()
         end)
+        journal:HookScript("OnHide", function() self:Deactivate(true) end)
         self.showHooked = true
     end
     if not self.content then
@@ -87,24 +115,32 @@ function I:BuildCollections(journal)
         self.content:Hide()
         self.content:SetPoint("TOPLEFT", journal, "TOPLEFT", 8, -60)
         self.content:SetPoint("BOTTOMRIGHT", journal, "BOTTOMRIGHT", -8, 8)
-        self.content:SetFrameLevel(journal:GetFrameLevel() + 10)
+        self.content:SetFrameLevel(journal:GetFrameLevel() + 20)
+    end
+    if not self.cover then
+        -- Cover native search/progress controls without hiding or refreshing
+        -- their pages (ToyBox OnShow writes fields later consumed by UseToy).
+        self.cover = M.UI:Panel(journal)
+        self.cover:Hide(); self.cover:EnableMouse(true)
+        self.cover:SetPoint("TOPLEFT", journal, "TOPLEFT", 62, -28)
+        self.cover:SetPoint("BOTTOMRIGHT", journal, "TOPRIGHT", -8, -60)
+        self.cover:SetFrameLevel(journal:GetFrameLevel() + 20)
     end
     if not M.UI:Create(self.content) then return false end
     if not self.tab then
-        local last = journal.numTabs or 0
-        while tabAt(journal, last + 1) do last = last + 1 end
-        local id = last + 1
-        local tab = CreateFrame("Button", journal:GetName() .. "Tab" .. id, journal, "CollectionsJournalTab")
+        -- PanelTabButtonTemplate has parentArray="Tabs". A private parent is
+        -- essential: parenting it to the journal would taint journal.Tabs even
+        -- without an explicit assignment. Never register a native numeric ID.
+        self.tabHost = CreateFrame("Frame", nil, journal)
+        self.tabHost:SetAllPoints(journal)
+        local tab = CreateFrame("Button", "MogFocusCollectionsTab", self.tabHost, "PanelTabButtonTemplate")
         self.tab = tab
-        tab:Hide(); tab:SetID(id); tab:SetText("MogFocus")
-        if journal.Tabs then journal.Tabs[id] = tab end
-    end
-    if not self.tabRegistered then
-        PanelTemplates_SetNumTabs(journal, math.max(journal.numTabs or 0, self.tab:GetID()))
-        self.tabRegistered = true
+        tab:Hide(); tab:SetText("MogFocus")
+        tab:SetScript("OnClick", function() self:Activate() end)
+        PanelTemplates_DeselectTab(tab)
     end
     if not self.eventRegistered then
-        EventRegistry:RegisterCallback("CollectionsJournal.TabSet", function(_, frame, selected) self:OnTab(frame, selected) end, self)
+        EventRegistry:RegisterCallback("CollectionsJournal.TabSet", function(_, frame) self:OnTab(frame) end, self)
         self.eventRegistered = true
     end
     if not self.sizeHooked then
@@ -115,15 +151,11 @@ function I:BuildCollections(journal)
         hooksecurefunc("PanelTemplates_AnchorTabs", function(frame) if frame == journal then self:LayoutTab() end end)
         self.anchorHooked = true
     end
-    if not self.fontHooked then
-        hooksecurefunc("PanelTemplates_UpdateTabs", function(frame) if frame == journal then self:TabFonts() end end)
-        self.fontHooked = true
-    end
     self:LayoutTab()
     self.collectionsReady = true
     self.pendingCollections = nil
     self.tab:Show()
-    self:OnTab(journal, PanelTemplates_GetSelectedTab(journal))
+    self:Deactivate(false)
     return true
 end
 
@@ -133,11 +165,10 @@ function I:Open()
     if InCombatLockdown() then M:Print(M.L("COMBAT")); return end
     if not CollectionsJournal then C_AddOns.LoadAddOn("Blizzard_Collections") end
     if not self:Collections() then M:Print(M.L("COLLECTIONS_UNAVAILABLE")); return end
-    if CollectionsJournal:IsShown() and M.UI.frame:IsShown() and PanelTemplates_GetSelectedTab(CollectionsJournal) == self.tab:GetID() then
-        HideUIPanel(CollectionsJournal)
+    if CollectionsJournal:IsShown() and self.active and M.UI.frame:IsShown() then
+        securecallfunction(HideUIPanel, CollectionsJournal)
     else
-        ShowUIPanel(CollectionsJournal)
-        CollectionsJournal_SetTab(CollectionsJournal, self.tab:GetID())
+        self:Activate()
     end
 end
 

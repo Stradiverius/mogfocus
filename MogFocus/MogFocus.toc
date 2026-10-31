@@ -3,7 +3,7 @@
 ## Notes: Per-character raid appearance goals and verified acquisition sources.
 ## Notes-csCZ: Osobní raidové transmog cíle a ověřené zdroje vzhledů.
 ## Author: Stradiverius
-## Version: 0.2.1
+## Version: 0.3.0
 ## SavedVariables: MogFocusDB
 ## IconTexture: Interface\Icons\INV_Helmet_03
 
@@ -16,6 +16,7 @@ Sources.lua
 Collection.lua
 Changelog.lua
 Skins.lua
+Preview.lua
 UI.lua
 Options.lua
 Integration.lua

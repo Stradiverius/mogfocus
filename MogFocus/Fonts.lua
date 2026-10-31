@@ -4,6 +4,7 @@ M.Fonts = F
 
 local colors = { tabNormal = { 1, .82, 0 }, tabDisabled = { .5, .5, .5 } }
 local roles = { text = { 11, false }, button = { 12, false }, title = { 14, true }, menu = { 12, false },
+    hero = { 21, true }, muted = { 11, false }, kicker = { 10, true },
     tabNormal = { 12, false }, tabSelected = { 12, false }, tabDisabled = { 12, false } }
 
 function F:Initialize()

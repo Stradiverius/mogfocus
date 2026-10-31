@@ -1,7 +1,7 @@
 local _, M = ...
-M.version = "0.2.1"
+M.version = "0.3.0"
 M.schema = 2
-M.targetBuild = "12.1.5.70529"
+M.targetBuild = "12.1.5.70575"
 M.modules = {}
 
 function M.Call(namespace, name, ...)

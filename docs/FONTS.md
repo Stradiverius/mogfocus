@@ -10,7 +10,8 @@ in `MogFocus/LICENSES/DejaVu.txt` (Bitstream Vera license; DejaVu changes public
 | `DejaVuSans-Bold.ttf` | `a4c5bc453ca281d90ea079e596da7ae0dfeb5777497c29ec254e76d97ff6f890` |
 | `DejaVuSans.ttf` | `57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e` |
 
-`Fonts.lua` owns private FontObjects for body, button, title, menu and native tab states. `UI.lua` creates every custom string
+`Fonts.lua` owns private FontObjects for body, button, title, menu and native tab states,
+plus hero headings, muted text and small accent labels added in 0.3.0. `UI.lua` creates every custom string
 with these objects; `Skins.lua` reapplies the same private fonts on refresh, and
 row reuse uses the private button font. Search edit boxes, pickers, options,
 notifications and changelog use the same paths. The native-tab font override is

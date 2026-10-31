@@ -7,8 +7,38 @@ for _, method in ipairs({ "SetPoint", "ClearAllPoints", "SetFrameStrata", "SetFr
     "SetTextColor", "SetJustifyH", "SetJustifyV", "SetHighlightTexture", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor",
     "SetColorTexture", "SetTexture", "SetDesaturated", "SetStatusBarTexture", "SetMinMaxValues", "SetValue", "SetStatusBarColor",
     "SetAutoFocus", "ClearFocus", "EnableMouseWheel", "SetAutoDress", "SetKeepModelOnHide", "SetUnit", "Undress", "TryOn",
-    "SetPortraitZoom", "SetRotation", "SetDuration", "SetFromAlpha", "SetToAlpha", "SetLooping", "SetAllPoints", "SetItemByID", "SetHyperlink", "AddLine", "SetOwner" }) do Frame[method] = noop end
-function Frame:IsGeoReady() return true end
+    "SetPortraitZoom", "SetRotation", "SetDuration", "SetFromAlpha", "SetToAlpha", "SetLooping", "SetAllPoints", "SetItemByID", "SetHyperlink", "AddLine", "SetOwner",
+    "SetGradient", "SetTexCoord", "SetVertexColor", "SetAtlas", "SetBlendMode", "SetLight", "SetMaxLines", "SetUseTransmogChoices", "SetObeyHideInTransmogFlag" }) do Frame[method] = noop end
+function CreateColor(r, g, b, a) return { r = r, g = g, b = b, a = a or 1 } end
+function CreateVector3D(x, y, z) return { x = x, y = y, z = z } end
+Enum = { ItemTryOnReason = { Success = 0, WrongRace = 1, NotEquippable = 2, DataPending = 3 } }
+function IsUnitModelReadyForUI() return mockUnitReady ~= false end
+function Frame:GetModelFileID() return self.modelFileID or 12345 end
+function Frame:SetUnit(unit, blend, native)
+    self.unit, self.nativeForm = unit, native
+    if mockSetUnitFailure then return false end
+    self.modelFileID = mockModelFileID or 12345
+    self.setUnitCalls = (self.setUnitCalls or 0) + 1
+    if self.scripts.OnModelLoaded then self.scripts.OnModelLoaded(self) end
+    return true
+end
+function Frame:Undress() self.worn = {}; self.undressCalls = (self.undressCalls or 0) + 1 end
+function Frame:TryOn(sourceID)
+    self.tryOnCalls = (self.tryOnCalls or 0) + 1
+    self.sourceCalls = self.sourceCalls or {}; self.sourceCalls[sourceID] = (self.sourceCalls[sourceID] or 0) + 1
+    if mockTryOnError then error("Injected model dressing failure") end
+    if mockTryOnNil then return nil end
+    local reason = mockTryOnReasons and mockTryOnReasons[sourceID] or Enum.ItemTryOnReason.Success
+    if reason == Enum.ItemTryOnReason.Success then self.worn = self.worn or {}; self.worn[sourceID] = true end
+    return reason
+end
+function Frame:GetItemTransmogInfoList()
+    local list = {}; for id in pairs(self.worn or {}) do list[#list + 1] = { appearanceID = id, secondaryAppearanceID = 0 } end
+    return list
+end
+function Frame:IsGeoReady() return mockGeoReady ~= false end
+function Frame:SetPortraitZoom(value) self.portraitZoom = value end
+function Frame:SetRotation(value) self.rotation = value end
 function Frame:SetSize(w, h) self.width, self.height = w, h end
 function Frame:SetWidth(w) self.width = w end
 function Frame:SetHeight(h) self.height = h end
@@ -30,7 +60,10 @@ function Frame:SetScrollChild(child) self.child = child end
 function Frame:SetVerticalScroll(value) self.scroll = value end
 function Frame:GetVerticalScroll() return self.scroll or 0 end
 function Frame:SetScript(name, fn) self.scripts[name] = fn end
-function Frame:HookScript(name, fn) self.scripts[name] = fn end
+function Frame:HookScript(name, fn)
+    local original = self.scripts[name]
+    self.scripts[name] = function(...) if original then original(...) end; fn(...) end
+end
 function Frame:RegisterEvent(event) self.events[event] = true end
 function Frame:IsShown() return not self.hidden and (not self.parent or self.parent:IsShown()) end
 function Frame:Show()
@@ -51,10 +84,13 @@ function Frame:CreateAnimationGroup() return CreateFrame("AnimationGroup") end
 function Frame:CreateTexture() return CreateFrame("Texture", nil, self) end
 function Frame:CreateFontString() return CreateFrame("FontString", nil, self) end
 mockFrames = {}
-function CreateFrame(kind, name, parent)
+function CreateFrame(kind, name, parent, template)
     local frame = setmetatable({ kind = kind, name = name, parent = parent, scripts = {}, events = {} }, { __index = Frame })
     mockFrames[#mockFrames + 1] = frame
     if name then _G[name] = frame end
+    if parent and (template == "PanelTabButtonTemplate" or template == "CollectionsJournalTab") then
+        parent.Tabs = parent.Tabs or {}; parent.Tabs[#parent.Tabs + 1] = frame
+    end
     return frame
 end
 UIParent = CreateFrame("Frame"); UIParent:SetSize(1920, 1080)
@@ -76,7 +112,7 @@ function UnitFullName() return "Test", "Realm" end
 function GetRealmName() return "Realm" end
 function IsLoggedIn() return mockLoggedIn end
 function InCombatLockdown() return mockCombat end
-function GetBuildInfo() return "12.1.5", "70529", "Oct 23 2026", 120105 end
+function GetBuildInfo() return "12.1.5", "70575", "Oct 29 2026", 120105 end
 function GetNumClasses() return 2 end
 function GetCursorPosition() return 150, 150 end
 function IsMouseButtonDown() return false end
@@ -152,7 +188,11 @@ function Frame:SetDisabledFontObject(font) self.disabledFont = font end
 function Frame:SetShadowColor() end
 function Frame:SetShadowOffset() end
 function Frame:GetFontString() return self.Text end
-function Frame:SetTitle(title) self.windowTitle = title end
+function Frame:GetTitleText()
+    if not self.titleText then self.titleText = CreateFrame("FontString", nil, self) end
+    return self.titleText
+end
+function Frame:SetTitle(title) self.windowTitle = title; self:GetTitleText():SetText(title) end
 function Frame:NumLines() return self.lineCount or 0 end
 function Frame:ClearLines() self.lineCount = 0 end
 function Frame:AddLine(text)
@@ -167,8 +207,8 @@ end
 function CreateFont(name) return CreateFrame("Font", name) end
 local createFrame = CreateFrame
 function CreateFrame(kind, name, parent, template)
-    local frame = createFrame(kind, name, parent)
-    if template == "CollectionsJournalTab" then frame.Text = createFrame("FontString", nil, frame) end
+    local frame = createFrame(kind, name, parent, template)
+    if template == "CollectionsJournalTab" or template == "PanelTabButtonTemplate" then frame.Text = createFrame("FontString", nil, frame) end
     return frame
 end
 function Frame:SetText(text) self.text = text; if self.Text then self.Text:SetText(text) end end
@@ -197,16 +237,20 @@ function PanelTemplates_UpdateTabs(j)
 end
 function PanelTemplates_ResizeTabsToFit(j, w) j.tabWidthBudget = w end
 function PanelTemplates_TabResize(tab) tab:SetWidth(90) end
+function PanelTemplates_SelectTab(tab) tab.selected = true; tab:SetEnabled(false) end
+function PanelTemplates_DeselectTab(tab) tab.selected = false; tab:SetEnabled(true) end
 function PanelTemplates_GetSelectedTab(j) return j.selectedTab end
 function PanelTemplates_SetTab(j, id) j.selectedTab = id; PanelTemplates_UpdateTabs(j) end
 function SetCVar(key, value) mockCVars = mockCVars or {}; mockCVars[key] = value end
 function CollectionsJournal_SetTab(j, id)
     PanelTemplates_SetTab(j, id)
+    SetCVar("petJournalTab", id); j:SetTitle("Native " .. id)
     for index, page in ipairs(j.pages) do page:SetShown(index == id) end
     EventRegistry:TriggerEvent("CollectionsJournal.TabSet", j, id)
 end
 function ShowUIPanel(frame) frame:Show() end
 function HideUIPanel(frame) frame:Hide() end
+function securecallfunction(fn, ...) return fn(...) end
 function CreateMockCollections(extraTabs)
     local j = CreateFrame("Frame", "CollectionsJournal", UIParent); j:SetSize(703, 606); j:Hide()
     j.pages = {}
@@ -217,6 +261,7 @@ function CreateMockCollections(extraTabs)
     j.WardrobeTab, j.WarbandScenesTab = _G.CollectionsJournalTab5, _G.CollectionsJournalTab6
     WardrobeCollectionFrame = j.pages[5]
     j.numTabs, j.selectedTab = 6 + (extraTabs or 0), 5
+    j:SetTitle("Native 5"); SetCVar("petJournalTab", 5)
     return j
 end
 C_AddOns.LoadAddOn = function(name)

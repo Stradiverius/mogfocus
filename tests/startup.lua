@@ -164,7 +164,7 @@ eq(GameFontNormal.fontPath, nil)
 
 -- Native Collections opening and clicking the tab must show real content.
 ShowUIPanel(CollectionsJournal)
-CollectionsJournal_SetTab(CollectionsJournal, M.Integration.tab:GetID())
+M.Integration.tab.scripts.OnClick()
 assert(M.UI.frame:IsShown() and M.UI.frame.status:GetText() ~= "" and M.UI.left.count > 0)
 if empty then
     eq(M.UI.left.rows[1].title:GetText(), M.L("EMPTY"))

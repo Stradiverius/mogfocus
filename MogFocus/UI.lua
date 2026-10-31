@@ -2,15 +2,16 @@ local _, M = ...
 local U = { expanded = {}, view = "sets", filters = {} }
 M.UI = U
 
-function U:Panel(parent, name)
-    return M.Skins:Register(CreateFrame("Frame", name, parent, "BackdropTemplate"), "panel")
+function U:Panel(parent, name, role)
+    return M.Skins:Register(CreateFrame("Frame", name, parent, "BackdropTemplate"), role or "panel")
 end
 
 function U:Text(parent, text, title)
     local font = parent:CreateFontString(nil, "OVERLAY")
-    M.Fonts:Apply(font, title and "title" or "text")
+    local role = type(title) == "string" and title or title and "title" or "text"
+    M.Fonts:Apply(font, role)
     font:SetJustifyH("LEFT"); font:SetJustifyV("TOP"); font:SetText(text or "")
-    M.Skins:Register(font, title and "title" or "text")
+    M.Skins:Register(font, role)
     return font
 end
 
@@ -20,7 +21,7 @@ function U:Button(parent, text, width, action)
     button.caption = self:Text(button, text)
     button.caption:SetPoint("LEFT", 7, 0); button.caption:SetPoint("RIGHT", -7, 0)
     button.caption:SetJustifyH("CENTER"); button.caption:SetJustifyV("MIDDLE")
-    button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+    button:SetHighlightTexture("Interface\\Buttons\\WHITE8X8", "ADD")
     button:SetScript("OnClick", function() if action then action() end end)
     M.Skins:Register(button, "button")
     return button
@@ -60,13 +61,14 @@ function U:Row(list, height)
     if not row then
         row = CreateFrame("Button", nil, list.content, "BackdropTemplate")
         row.title = self:Text(row, "", true)
-        row.body = self:Text(row, "")
+        row.body = self:Text(row, "", "muted")
         row.icon = row:CreateTexture(nil, "ARTWORK")
         row.icon:SetSize(30, 30); row.icon:SetPoint("TOPLEFT", 8, -8)
         row.bar = CreateFrame("StatusBar", nil, row)
         row.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
         row.bar:SetHeight(5); row.bar:SetPoint("BOTTOMLEFT", 8, 7); row.bar:SetPoint("BOTTOMRIGHT", -8, 7)
         row.actions = {}
+        row:SetHighlightTexture("Interface\\Buttons\\WHITE8X8", "ADD")
         row:SetScript("OnHide", function()
             if row.flash then row.flash:Stop(); row.icon:SetAlpha(1) end
         end)
@@ -77,6 +79,8 @@ function U:Row(list, height)
     M.Fonts:Apply(row.title, "button")
     row.body:ClearAllPoints(); row.body:SetPoint("TOPLEFT", 10, -31); row.body:SetWidth(list.width - 20)
     row.body:SetText(""); row.title:SetText(""); row.icon:Hide(); row.bar:Hide()
+    row.icon:ClearAllPoints(); row.icon:SetSize(30, 30); row.icon:SetPoint("TOPLEFT", 8, -8)
+    if row.previewHint then row.previewHint:Hide(); row.badge:Hide() end
     for _, b in ipairs(row.actions) do b:Hide() end
     row:SetScript("OnClick", nil); row:SetScript("OnEnter", nil); row:SetScript("OnLeave", nil)
     row.selected = false; row:Show()
@@ -144,20 +148,26 @@ function U:Build(parent)
     f:Hide()
     f:SetAllPoints(parent); f:EnableMouse(true)
     self.frame = f
-    f.title = self:Text(f, "MogFocus", true); f.title:SetPoint("TOPLEFT", 18, -16)
-    f.character = self:Text(f, ""); f.character:SetPoint("TOPLEFT", 18, -44)
+    f.hero = self:Panel(f, nil, "heroPanel")
+    f.crest = self:Panel(f.hero); f.crest:SetSize(44, 44); f.crest:SetPoint("TOPLEFT", 13, -10)
+    f.crest.icon = f.crest:CreateTexture(nil, "ARTWORK"); f.crest.icon:SetTexture("Interface\\Icons\\INV_Helmet_03")
+    f.crest.icon:SetPoint("TOPLEFT", 4, -4); f.crest.icon:SetPoint("BOTTOMRIGHT", -4, 4); f.crest.icon:SetTexCoord(.08, .92, .08, .92)
+    f.title = self:Text(f.hero, "MOGFOCUS", "hero"); f.title:SetPoint("TOPLEFT", 70, -9)
+    f.character = self:Text(f.hero, "", "muted"); f.character:SetPoint("TOPLEFT", 71, -39)
+    f.focusLabel = self:Text(f.hero, M.L("CURRENT_CAMPAIGN"), "kicker"); f.focusLabel:SetPoint("TOPRIGHT", -14, -10); f.focusLabel:SetWidth(240)
     f.close = self:Button(f, M.L("CLOSE"), 85, function() HideUIPanel(CollectionsJournal) end); f.close:SetPoint("TOPRIGHT", -12, -10)
     f.options = self:Button(f, M.L("OPTIONS"), 120, function() M.Options:Open() end); f.options:SetPoint("RIGHT", f.close, "LEFT", -6, 0)
     f.optionsIcon = f.options:CreateTexture(nil, "ARTWORK"); f.optionsIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
     f.optionsIcon:SetSize(16, 16); f.optionsIcon:SetPoint("LEFT", 5, 0)
+    f.options.caption:ClearAllPoints(); f.options.caption:SetPoint("LEFT", 26, 0); f.options.caption:SetPoint("RIGHT", -7, 0)
     f.version = self:Button(f, M.L("VERSION", M.version), 175, function() M.Options:Changelog() end)
     f.version:SetPoint("RIGHT", f.options, "LEFT", -6, 0)
-    f.focus = self:Button(f, "", 330, function()
+    f.focus = self:Button(f.hero, "", 246, function()
         self:Choose(f.focus, self:ExpansionChoices(), function(id)
             M.Store.profile.focus = id; self.expansion = id; self.selected = nil
             self.filters.RAID, self.filters.VARIANT, self.catalogPage = nil, nil, 1; self:Render()
         end)
-    end); f.focus:SetPoint("TOPRIGHT", -12, -43)
+    end); f.focus:SetPoint("TOPRIGHT", -12, -28); f.focus:SetHeight(28)
     f.tabs = {}
     for index, spec in ipairs({ { "sets", "MY_SETS" }, { "where", "WHERE" }, { "catalog", "CATALOG" } }) do
         local view, key = spec[1], spec[2]
@@ -177,39 +187,26 @@ function U:Build(parent)
     f.makeFocus:SetPoint("LEFT", f.expansion, "RIGHT", 6, 0)
     f.refresh = self:Button(f, M.L("REFRESH"), 100, function()
         M.Collection.requested = {}; M.Collection.scanList = nil; M:Refresh(true)
+        if self.model and self.model:IsShown() then M.Preview:Retry(self.model) end
         if self.view == "catalog" then M:StartCatalog() end
     end); f.refresh:SetPoint("TOPRIGHT", -12, -116)
     f.status = self:Text(f, ""); f.status:SetPoint("TOPLEFT", 20, -151); f.status:SetWidth(1130)
-    f.note = self:Text(f, ""); f.note:SetPoint("TOPLEFT", 20, -177); f.note:SetWidth(1130)
+    f.note = self:Text(f, "", "muted"); f.note:SetPoint("TOPLEFT", 20, -177); f.note:SetWidth(1130)
+    f.progress = CreateFrame("StatusBar", nil, f); f.progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8"); f.progress:SetMinMaxValues(0, 100)
+    f.progress.back = f.progress:CreateTexture(nil, "BACKGROUND"); f.progress.back:SetAllPoints(f.progress); f.progress.back:SetColorTexture(.12, .14, .18, 1)
     self.left = self:Scroll(f, 320, 470); self.left.frame:SetPoint("TOPLEFT", 18, -215)
     self.detail = self:Panel(f); self.detail:SetPoint("TOPLEFT", 366, -210); self.detail:SetSize(800, 510)
-    self.detail.title = self:Text(self.detail, "", true); self.detail.title:SetPoint("TOPLEFT", 12, -12); self.detail.title:SetWidth(770)
-    self.detail.meta = self:Text(self.detail, ""); self.detail.meta:SetPoint("TOPLEFT", 12, -39); self.detail.meta:SetWidth(770)
+    self.detail.title = self:Text(self.detail, "", true); self.detail.title:SetPoint("TOPLEFT", 12, -12); self.detail.title:SetWidth(770); self.detail.title:SetMaxLines(2)
+    self.detail.meta = self:Text(self.detail, "", "muted"); self.detail.meta:SetPoint("TOPLEFT", 12, -39); self.detail.meta:SetWidth(770); self.detail.meta:SetMaxLines(2)
     self.detail.missing = self:Check(self.detail, "MISSING_ONLY", function(value) M.Store.settings.missingOnly = value; self:Render() end)
     self.detail.missing:SetPoint("TOPLEFT", 10, -61)
     self.parts = self:Scroll(self.detail, 535, 400); self.parts.frame:SetPoint("TOPLEFT", 10, -100)
-    self.model = CreateFrame("DressUpModel", nil, self.detail)
-    self.model:SetSize(205, 260); self.model:SetPoint("TOPRIGHT", -12, -84)
-    self.model:EnableMouse(true); self.model:EnableMouseWheel(true)
-    self.model:SetAutoDress(false); self.model:SetKeepModelOnHide(false)
-    self.model:SetScript("OnMouseDown", function(_, button)
-        if button == "LeftButton" then self.model.dragX = GetCursorPosition() end
-    end)
-    self.model:SetScript("OnMouseUp", function() self.model.dragX = nil end)
-    self.model:SetScript("OnHide", function() self.model.dragX = nil end)
-    self.model:SetScript("OnUpdate", function(model)
-        if not model.dragX then return end
-        if not IsMouseButtonDown("LeftButton") then model.dragX = nil; return end
-        local x = GetCursorPosition()
-        self.rotation = (self.rotation or 0) + (x - model.dragX) * .012
-        model:SetRotation(self.rotation, false); model.dragX = x
-    end)
-    self.model:SetScript("OnModelLoaded", function() self:ApplyPreview() end)
-    self.zoom = .2
-    self.model:SetScript("OnMouseWheel", function(model, delta)
-        self.zoom = math.max(0, math.min(1, self.zoom + delta * .06)); model:SetPortraitZoom(self.zoom)
-    end)
-    self.modelNote = self:Text(self.detail, M.L("PREVIEW")); self.modelNote:SetPoint("TOPRIGHT", -12, -350); self.modelNote:SetWidth(205)
+    self.detail.stage = self:Panel(self.detail, nil, "stage")
+    self.modelNote = self:Text(self.detail.stage, "", "muted"); self.modelNote:SetPoint("BOTTOMLEFT", 8, 42); self.modelNote:SetJustifyH("CENTER")
+    self.model = M.Preview:Create(self.detail.stage, self.modelNote); self.model.mogPreview.compact = true
+    self.model:SetPoint("TOPLEFT", 5, -6); self.model:SetPoint("BOTTOMRIGHT", -5, 65)
+    self.detail.enlarge = self:Button(self.detail.stage, M.L("LARGE_PREVIEW"), 130, function() if self.selected then M.Preview:Open(self.selected) end end)
+    self.detail.enlarge.primary = true; self.detail.enlarge:SetPoint("BOTTOMLEFT", 8, 9)
     self.detail.actions = {}
     for i, spec in ipairs({ { "PIN", function()
         local p = M.Store.profile
@@ -254,7 +251,7 @@ function U:Build(parent)
     f:SetScript("OnShow", function() if M.ready then M:Refresh(true) end end)
     f:SetScript("OnHide", function()
         if self.picker then self.picker:Hide() end
-        self.modelSet, self.previewSources = nil, nil
+        M.Preview:Stop(self.model)
     end)
     f:SetScript("OnSizeChanged", function() self:Layout() end)
     self.ready = true
@@ -282,46 +279,50 @@ function U:Layout()
     end
     local function scroll(list, parent, x, y, w, h)
         list.frame:ClearAllPoints(); list.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
-        list.frame:SetSize(w, math.max(70, h)); list.width = w - 4; list.content:SetWidth(list.width)
+        list.frame:SetSize(w, math.max(60, h)); list.width = w - 4; list.content:SetWidth(list.width)
     end
-    f.title:Hide(); f.close:Hide()
-    place(f.character, 8, 12, width - 286)
-    place(f.focus, width - 270, 5, 262, 29)
-    for index, view in ipairs({ "sets", "where", "catalog" }) do place(f.tabs[view].button, 8 + (index - 1) * 118, 40, 112) end
-    place(f.options, width - 118, 40, 110)
-    place(f.version, width - 278, 40, 154)
-    place(f.expansion, 8, 76, math.min(240, width * .35))
-    place(f.makeFocus, math.min(240, width * .35) + 22, 76, width - math.min(240, width * .35) - 136)
-    place(f.refresh, width - 104, 76, 96)
-    place(f.status, 8, 110, width - 16)
-    place(f.note, 8, 148, width - 16)
-    place(f.next, width - 198, 144, 190)
-    local leftWidth, bodyY = math.floor(width * .30), 184
-    local bodyHeight = height - bodyY - 8
-    scroll(self.left, f, 8, bodyY, leftWidth - 18, bodyHeight)
-    local detailX = leftWidth + 20
+    place(f.hero, 8, 6, width - 16, 60)
+    f.title:SetWidth(width - 358); f.character:SetWidth(width - 358)
+    f.close:Hide()
+    for index, view in ipairs({ "sets", "where", "catalog" }) do place(f.tabs[view].button, 12 + (index - 1) * 122, 76, 116, 30) end
+    place(f.options, width - 122, 76, 110, 30)
+    place(f.version, width - 226, 76, 96, 30)
+    local filterWidth = math.floor(width * .34)
+    place(f.expansion, 12, 116, filterWidth, 28)
+    place(f.makeFocus, filterWidth + 22, 116, width - filterWidth - 136, 28)
+    place(f.refresh, width - 102, 116, 90, 28)
+    place(f.status, 14, 154, width - 28)
+    place(f.progress, 14, 176, width - 28, 4)
+    place(f.note, 14, 188, width - 28)
+    place(f.next, width - 202, 184, 190)
+    local leftWidth, bodyY = math.floor(width * .29), 214
+    local bodyHeight = height - bodyY - 12
+    scroll(self.left, f, 12, bodyY, leftWidth - 22, bodyHeight)
+    local detailX = leftWidth + 18
     self.detail:ClearAllPoints(); self.detail:SetPoint("TOPLEFT", f, "TOPLEFT", detailX, -bodyY)
-    local detailWidth = width - detailX - 8
+    local detailWidth = width - detailX - 12
     self.detail:SetSize(detailWidth, bodyHeight)
-    self.detail.title:SetWidth(detailWidth - 20); self.detail.meta:SetWidth(detailWidth - 20)
-    self.previewWidth = math.max(126, math.min(185, math.floor(detailWidth * .31)))
-    self.partsWidth = detailWidth - self.previewWidth - 42
-    scroll(self.parts, self.detail, 8, 100, self.partsWidth, bodyHeight - 110)
-    self.model:SetWidth(self.previewWidth)
-    self.modelNote:SetWidth(self.previewWidth)
+    self.detail.title:SetWidth(detailWidth - 24); self.detail.meta:SetWidth(detailWidth - 24)
+    self.previewWidth = math.max(138, math.min(205, math.floor(detailWidth * .36)))
+    self.partsWidth = detailWidth - self.previewWidth - 48
+    scroll(self.parts, self.detail, 10, 100, self.partsWidth, bodyHeight - 144)
+    self.detail.stage:SetWidth(self.previewWidth)
+    self.modelNote:SetWidth(self.previewWidth - 16); self.detail.enlarge:SetWidth(self.previewWidth - 16)
+    local sideWidth = (detailWidth - 116) / 2
+    local positions = { { 10, sideWidth }, { 16 + sideWidth, 38 }, { 60 + sideWidth, 38 }, { 104 + sideWidth, sideWidth } }
     for index, button in ipairs(self.detail.actions) do
-        button:ClearAllPoints(); button:SetPoint("TOPRIGHT", self.detail, "TOPRIGHT", -8, -(bodyHeight - 108 + (index - 1) * 26))
-        button:SetSize(self.previewWidth, 24)
+        button:ClearAllPoints(); button:SetPoint("BOTTOMLEFT", self.detail, "BOTTOMLEFT", positions[index][1], 10)
+        button:SetSize(positions[index][2], 26)
     end
-    scroll(self.where, f, 8, bodyY, width - 36, bodyHeight)
-    place(f.search, 14, 184, math.min(280, width * .41), 25)
-    local filterWidth = (width - 32) / 3
-    for index, key in ipairs({ "CLASS", "RAID", "VARIANT" }) do place(f.catalogFilters[key], 8 + (index - 1) * (filterWidth + 8), 218, filterWidth, 30) end
-    local pagerX = math.min(280, width * .41) + 24
-    place(f.previousPage, pagerX, 184, 100)
-    place(f.nextPage, pagerX + 106, 184, 70)
-    place(f.page, pagerX + 184, 191, width - pagerX - 192)
-    scroll(self.catalog, f, 8, 258, width - 36, height - 266)
+    scroll(self.where, f, 12, bodyY, width - 44, bodyHeight)
+    place(f.search, 18, 154, math.min(286, width * .42), 28)
+    local catalogFilterWidth = (width - 40) / 3
+    for index, key in ipairs({ "CLASS", "RAID", "VARIANT" }) do place(f.catalogFilters[key], 12 + (index - 1) * (catalogFilterWidth + 8), 192, catalogFilterWidth, 30) end
+    local pagerX = math.min(286, width * .42) + 30
+    place(f.previousPage, pagerX, 154, 90, 28)
+    place(f.nextPage, pagerX + 98, 154, 66, 28)
+    place(f.page, pagerX + 176, 162, width - pagerX - 188)
+    scroll(self.catalog, f, 12, 252, width - 44, height - 264)
     self.layingOut = nil
     self:Render()
 end
@@ -331,11 +332,11 @@ function U:Render()
     local f, p = self.frame, M.Store.profile
     self.expansion = self.expansion or p.focus
     f.character:SetText((UnitFullName("player") or UnitName("player")) .. " · " .. (GetRealmName() or ""))
-    f.focus.caption:SetText(M.L("FOCUS") .. ": " .. M.Expansion(p.focus))
+    f.focusLabel:SetText(M.L("CURRENT_CAMPAIGN")); f.focus.caption:SetText(M.Expansion(p.focus))
     f.expansion.caption:SetText(M.L("BROWSE") .. ": " .. M.Expansion(self.expansion))
     f.makeFocus.caption:SetText(M.L("SET_FOCUS")); f.makeFocus:SetEnabled(p.focus ~= self.expansion)
-    f.options.caption:SetText("  " .. M.L("OPTIONS")); f.close.caption:SetText(M.L("CLOSE")); f.refresh.caption:SetText(M.L("REFRESH"))
-    f.version.caption:SetText(M.L("VERSION", M.version) .. (M.Store.db.readVersion ~= M.version and " *" or ""))
+    f.options.caption:SetText(M.L("OPTIONS")); f.close.caption:SetText(M.L("CLOSE")); f.refresh.caption:SetText(M.L("REFRESH"))
+    f.version.caption:SetText("v" .. M.version .. (M.Store.db.readVersion ~= M.version and " *" or ""))
     f.next.caption:SetText(M.L("NEXT_BUTTON"))
     for view, tab in pairs(f.tabs) do tab.button.caption:SetText(M.L(tab.key)); tab.button.selected = self.view == view end
     local sets = M.Collection:Selected(self.expansion)
@@ -344,6 +345,10 @@ function U:Render()
     if summary.percent then status = status .. " · " .. M.L("PERCENT", summary.percent) end
     if summary.pending > 0 then status = status .. " · " .. M.L("SUMMARY_PENDING", summary.pending) end
     f.status:SetText(status)
+    f.status:ClearAllPoints(); f.status:SetPoint("TOPLEFT", 14, self.view == "catalog" and -232 or -154)
+    f.progress:SetValue(summary.percent or 0); f.progress:SetStatusBarColor(unpack(M.Skins:Style().accent))
+    f.progress:SetShown(self.view ~= "catalog")
+    f.note:SetShown(self.view ~= "catalog")
     f.note:SetText(summary.done and M.L("NEXT") or M.L("FILTER_NOTE"))
     local hasNext = _G["EXPANSION_NAME" .. (self.expansion + 1)] ~= nil
     f.next:SetShown(summary.done and self.view ~= "catalog" and hasNext)
@@ -497,61 +502,39 @@ function U:RenderDetail(set)
     local d = self.detail
     self.parts:Clear()
     d.missing.caption:SetText(M.L("MISSING_ONLY")); d.missing:SetChecked(M.Store.settings.missingOnly)
-    self.modelNote:SetText(M.L("PREVIEW"))
-    for _, b in ipairs(d.actions) do b:SetShown(set ~= nil) end
+    d.enlarge.caption:SetText(M.L("LARGE_PREVIEW"))
+    for _, button in ipairs(d.actions) do button:SetShown(set ~= nil) end
+    d.stage:SetShown(set ~= nil)
     if not set then
-        d.title:SetText(M.L("CHOOSE")); d.meta:SetText(""); self.model:Hide(); self.modelSet = nil
-        self.previewSources = nil; self.modelNote:Hide(); d.missing:Hide(); self.parts:Finish(); return
+        d.title:SetText(M.L("CHOOSE")); d.meta:SetText(""); self.model:Hide()
+        d.missing:Hide(); self.parts:Finish(); return
     end
-    d.missing:Show(); self.modelNote:Show()
+    d.missing:Show()
     d.title:SetText(self:SetName(set))
-    local meta = set.info and (M.Expansion(set.info.expansionID) .. " · " .. (set.info.label or "") .. " · " .. (set.info.description or "")) or M.L("UNAVAILABLE")
+    local info = set.info
+    local meta = info and ((info.label or M.Expansion(info.expansionID)) .. " · " .. (info.description or "")) or M.L("UNAVAILABLE")
     d.meta:SetText(meta .. " · " .. self:Progress(set))
-    local metaY = 12 + d.title:GetStringHeight() + 8
+    local metaY = 12 + d.title:GetStringHeight() + 7
     d.meta:ClearAllPoints(); d.meta:SetPoint("TOPLEFT", 12, -metaY)
-    local missingY = metaY + d.meta:GetStringHeight() + 5
+    local missingY = metaY + d.meta:GetStringHeight() + 6
     d.missing:ClearAllPoints(); d.missing:SetPoint("TOPLEFT", 10, -missingY)
-    local partsY = math.max(100, missingY + 34)
-    self.parts.frame:ClearAllPoints(); self.parts.frame:SetPoint("TOPLEFT", 10, -partsY)
-    self.parts.frame:SetHeight(math.max(80, d:GetHeight() - partsY - 8))
-    local previewY = math.max(80, metaY + d.meta:GetStringHeight() + 8)
-    local actionsY = d:GetHeight() - 108
-    local noteY = actionsY - math.max(34, self.modelNote:GetStringHeight()) - 6
-    self.model:ClearAllPoints(); self.model:SetPoint("TOPRIGHT", d, "TOPRIGHT", -8, -previewY)
-    self.model:SetHeight(math.max(1, noteY - previewY - 6))
-    self.modelNote:ClearAllPoints(); self.modelNote:SetPoint("TOPRIGHT", d, "TOPRIGHT", -8, -noteY)
+    local partsY = missingY + 34
+    self.parts.frame:ClearAllPoints(); self.parts.frame:SetPoint("TOPLEFT", d, "TOPLEFT", 10, -partsY)
+    self.parts.frame:SetHeight(math.max(50, d:GetHeight() - partsY - 48))
+    d.stage:ClearAllPoints(); d.stage:SetPoint("TOPRIGHT", d, "TOPRIGHT", -10, -(missingY + 2))
+    d.stage:SetHeight(math.max(140, d:GetHeight() - missingY - 50))
     d.actions[1].caption:SetText(M.L(M.Store.profile.pinned == set.id and "UNPIN" or "PIN"))
-    d.actions[2].caption:SetText(M.L("UP")); d.actions[3].caption:SetText(M.L("DOWN")); d.actions[4].caption:SetText(M.L("REMOVE"))
+    d.actions[2].caption:SetText(M.L("UP_SHORT")); d.actions[3].caption:SetText(M.L("DOWN_SHORT")); d.actions[4].caption:SetText(M.L("REMOVE"))
     d.actions[2]:SetEnabled(M.Store.settings.sort == "custom"); d.actions[3]:SetEnabled(M.Store.settings.sort == "custom")
-    if set.status ~= "ready" then
-        local row = self:Row(self.parts, 70); row.title:SetText(M.L(set.status == "loading" and "LOADING" or "UNAVAILABLE"))
-        self.model:Hide(); self.modelSet, self.previewSources = nil, nil
-    else
-        for _, piece in ipairs(set.pieces) do
-            if not M.Store.settings.missingOnly or not piece.collected then self:PieceRow(self.parts, piece, set.info.expansionID) end
-        end
-        if self.parts.count == 0 then local row = self:Row(self.parts, 70); row.title:SetText(M.L("NO_MISSING")) end
-        self.model:Show()
-        if self.modelSet ~= set.id then
-            self.modelSet = set.id
-            self.previewSources = {}
-            for _, piece in ipairs(set.pieces) do self.previewSources[#self.previewSources + 1] = piece.sourceID end
-            local success = self.model:SetUnit("player", false)
-            if success == false then self.modelNote:SetText(M.L("PREVIEW_UNAVAILABLE"))
-            elseif self.model:IsGeoReady() then self:ApplyPreview()
-            else self.modelNote:SetText(M.L("LOADING")) end
-        end
+    for _, piece in ipairs(set.pieces) do
+        if not M.Store.settings.missingOnly or not piece.collected then self:PieceRow(self.parts, piece, info and info.expansionID) end
     end
+    if self.parts.count == 0 then
+        local row = self:Row(self.parts, 72)
+        row.title:SetText(M.L(set.status ~= "ready" and "LOADING" or "NO_MISSING"))
+    end
+    self.model:Show(); M.Preview:Select(self.model, set.id)
     self.parts:Finish()
-end
-
-function U:ApplyPreview()
-    if self.applyingPreview or not self.previewSources or not self.model:IsShown() then return end
-    self.applyingPreview = true
-    self.model:Undress(); self.model:SetPortraitZoom(self.zoom); self.model:SetRotation(self.rotation or 0, false)
-    for _, sourceID in ipairs(self.previewSources) do self.model:TryOn(sourceID) end
-    self.applyingPreview = nil
-    self.modelNote:SetText(M.L("PREVIEW"))
 end
 
 function U:RenderWhere(sets)
@@ -610,8 +593,7 @@ function U:RenderCatalog()
     self.catalog:Clear()
     if self.filters.CLASS == nil then self.filters.CLASS = select(3, UnitClass("player")) or 0 end
     local f, collection = self.frame, M.Collection
-    f.note:SetText(M.L("CATALOG_NOTE"))
-    f.status:SetText(collection.catalogAvailable and M.L("CATALOG_SCAN", collection.scanIndex, collection.scanList and #collection.scanList or 0) or M.L("LOADING"))
+    f.note:SetText(M.L("CATALOG_PREVIEW_HINT"))
     for key, b in pairs(f.catalogFilters) do
         local value = self.filters[key]
         if key == "CLASS" then local info = M.Call(C_CreatureInfo, "GetClassInfo", value or 0); value = info and info.className end
@@ -636,6 +618,7 @@ function U:RenderCatalog()
         if a.info.name ~= b.info.name then return a.info.name < b.info.name end
         return a.info.setID < b.info.setID
     end)
+    f.status:SetText(collection.catalogAvailable and M.L("CATALOG_RESULTS", #entries) or M.L("LOADING"))
     local pages = math.max(1, math.ceil(#entries / 50))
     self.catalogPage = math.max(1, math.min(self.catalogPage or 1, pages))
     f.previousPage.caption:SetText(M.L("PREVIOUS")); f.previousPage:SetEnabled(self.catalogPage > 1)
@@ -645,18 +628,37 @@ function U:RenderCatalog()
     for index = (self.catalogPage - 1) * 50 + 1, math.min(#entries, self.catalogPage * 50) do
         local entry = entries[index]
         local info = entry.info
-        local row = self:Row(self.catalog, 85)
-        row.title:SetWidth(self.catalog.width - 138); row.title:SetText(info.name .. " · " .. (info.description or "") .. " · #" .. info.setID)
+        local id = info.setID
+        local row = self:Row(self.catalog, 100)
+        row.title:ClearAllPoints(); row.title:SetPoint("TOPLEFT", 76, -12)
+        M.Fonts:Apply(row.title, "title")
+        row.title:SetWidth(self.catalog.width - 204); row.title:SetText(info.name)
+        row.icon:SetSize(46, 46); row.icon:ClearAllPoints(); row.icon:SetPoint("TOPLEFT", 14, -14)
+        if not entry.icon then
+            local primary = M.Call(C_TransmogSets, "GetSetPrimaryAppearances", id)
+            if primary and primary[1] then entry.icon = M.Call(C_TransmogCollection, "GetSourceIcon", primary[1].appearanceID) end
+        end
+        row.icon:SetTexture(entry.icon or "Interface\\Icons\\INV_Helmet_03"); row.icon:SetDesaturated(false); row.icon:Show()
         local raids = {}; for raid in pairs(entry.raids) do raids[#raids + 1] = raid end; table.sort(raids)
-        row.body:SetWidth(self.catalog.width - 138); row.body:SetText((info.label or "") .. " · " .. (#raids > 0 and table.concat(raids, ", ") or M.L("UNKNOWN")) .. "\n" .. M.L("EXPANSION") .. ": " .. M.Expansion(info.expansionID))
-        row.body:SetPoint("TOPLEFT", 10, -math.max(31, row.title:GetStringHeight() + 14))
-        local height = math.max(85, row.title:GetStringHeight() + row.body:GetStringHeight() + 27)
+        row.body:SetWidth(self.catalog.width - 204)
+        row.body:SetText((info.description or info.label or M.Expansion(info.expansionID)) .. "\n" .. (#raids > 0 and table.concat(raids, ", ") or M.L("UNKNOWN")))
+        row.body:ClearAllPoints(); row.body:SetPoint("TOPLEFT", 76, -(row.title:GetStringHeight() + 20))
+        if not row.previewHint then
+            row.previewHint = self:Text(row, "", "kicker"); row.previewHint:SetPoint("BOTTOMLEFT", 76, 12)
+            row.badge = self:Text(row, "", "kicker"); row.badge:SetPoint("TOPRIGHT", -14, -58); row.badge:SetWidth(108); row.badge:SetJustifyH("RIGHT")
+        end
+        row.previewHint:SetWidth(self.catalog.width - 204); row.previewHint:SetText(M.L("VIEW_ON_CHARACTER")); row.previewHint:Show()
+        row.badge:SetText(info.collected and M.L("COMPLETE") or M.Store:Contains(id) and M.L("SELECTED") or ""); row.badge:Show()
+        row:SetScript("OnClick", function() M.Preview:Open(id) end)
+        local height = math.max(100, row.title:GetStringHeight() + row.body:GetStringHeight() + row.previewHint:GetStringHeight() + 42)
         self.catalog.y = self.catalog.y + height - row:GetHeight(); row:SetHeight(height)
-        local selected = M.Store:Contains(info.setID)
+        local selected = M.Store:Contains(id)
+        row.selected = selected
         local add = self:Action(row, 1, M.L(selected and "REMOVE" or "ADD"), 114, function()
-            if M.Store:Contains(info.setID) then M.Store:Remove(info.setID) else M.Store:Add(info) end
+            if M.Store:Contains(id) then M.Store:Remove(id) else M.Store:Add(info) end
             M:Refresh()
-        end); add:ClearAllPoints(); add:SetPoint("RIGHT", -14, 0)
+        end); add:ClearAllPoints(); add:SetPoint("TOPRIGHT", -14, -14); add:SetHeight(30)
+        add.primary = not selected; M.Skins:Apply(row, "card"); M.Skins:Apply(add, "button")
     end
     if #entries == 0 then local row = self:Row(self.catalog, 75); row.title:SetText(M.L(collection.catalogAvailable and "NO_MATCH" or "LOADING")) end
     self.catalog:Finish()

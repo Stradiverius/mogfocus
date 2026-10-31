@@ -76,10 +76,11 @@ test("catalog includes sets with missing parts before and after optional source 
     M.UI.view = "catalog"; M.UI:Render(); assert(M.UI.catalog.count >= 1)
 end)
 
-test("Collections dynamic tab, Campsites placement, page restoration and single instance", function()
+test("Collections private tab, Campsites placement, page restoration and single instance", function()
     reset()
     local j, tab = CollectionsJournal, M.Integration.tab
-    assert(tab:GetID() > 7) -- Another addon already owned tab 7 before MogFocus loaded.
+    eq(j.numTabs, 7); eq(#j.Tabs, 7) -- Another addon owns native tab 7; MogFocus stays private.
+    assert(tab.parent ~= j and tab.parent.Tabs[1] == tab)
     eq(tab.points[1][2], j.WarbandScenesTab)
     eq(CollectionsJournalTab7.points[1][2], tab)
     local frames, registrations = #mockFrames, Menu.registrationCount
@@ -90,7 +91,7 @@ test("Collections dynamic tab, Campsites placement, page restoration and single 
     PanelTemplates_SetNumTabs(j, lateID)
     eq(tab.points[1][2], j.WarbandScenesTab); eq(CollectionsJournalTab7.points[1][2], tab)
     eq(late.points[1][2], CollectionsJournalTab7)
-    CollectionsJournal_SetTab(j, tab:GetID()); assert(M.UI.frame:IsShown())
+    tab.scripts.OnClick(); assert(M.UI.frame:IsShown())
     eq(tab:GetFontString():GetFontObject(), M.Fonts.objects.tabSelected)
     eq(M.UI.frame.parent, M.Integration.content); eq(M.UI.layoutWidth, 687); eq(M.UI.layoutHeight, 538)
     assert(M.UI.detail:GetWidth() < M.UI.layoutWidth); assert(M.UI.parts.width > 100)
@@ -99,7 +100,7 @@ test("Collections dynamic tab, Campsites placement, page restoration and single 
     eq(tab:GetFontString():GetFontObject(), M.Fonts.objects.tabNormal)
     eq(M.UI.frame:IsShown(), false); assert(j.pages[5]:IsShown())
     CollectionsJournal_SetTab(j, 1); assert(j.pages[1]:IsShown()); eq(M.Integration.content:IsShown(), false)
-    M.Integration:Open(); assert(M.UI.frame:IsShown()); eq(j.pages[1]:IsShown(), false)
+    M.Integration:Open(); assert(M.UI.frame:IsShown()); assert(j.pages[1]:IsShown()) -- covered, not reloaded
     mockCombat = true; M.Integration:Open(); assert(M.UI.frame:IsShown()); mockCombat = false
     M.Integration:Open(); eq(j:IsShown(), false)
     M.Integration:Open(); assert(M.UI.frame:IsShown())

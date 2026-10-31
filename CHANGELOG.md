@@ -1,5 +1,35 @@
 # Changelog / Co je nového
 
+## 0.3.0 — 2026-10-31
+
+### Čeština
+
+**Nové funkce**
+
+Kliknutí na kartu katalogu otevře velký přesouvatelný náhled celé varianty na vlastní postavě, s otáčením, přiblížením, obnovením pohledu, částmi setu a jejich zdroji. Přímo v okně lze přidat nebo odebrat právě zobrazenou variantu.
+
+**Změny**
+
+Přepracovaný Warcraft skin má tmavé modrošedé panely, zlaté akcenty, záhlaví se znakem, pruh postupu a výrazné vybrané karty. Nové rozložení používají i Obsidian a Arcane. Katalog zobrazuje ikony částí a pozvánku k náhledu místo technických ID a počítadla skenování.
+
+**Opravy**
+
+Náhled řeší opožděná data, omezený počet opakování a nové načtení modelu. Filtr Pouze chybějící neomezuje celý outfit. Kvůli hlášenému blokování hraček/Hearthstonu je přepracováno napojení na Collections: MogFocus již nemění výběr ani registr záložek Blizzardu a neobnovuje jejich stránky. Cíle, nastavení a české fonty zůstávají zachované. Ještě je nutné ověření přímo ve hře.
+
+### English
+
+**New features**
+
+Click any catalog card to open a large, movable character preview with the complete variant, rotation, zoom, camera reset, pieces and sources. Add or remove that exact variant from the preview window.
+
+**Changes**
+
+A redesigned Warcraft skin uses dark blue stone colors, gold accents, an emblem header, progress strip and distinct selected cards. Obsidian and Arcane share the new layout. Catalog cards show item icons and preview hints instead of technical IDs and scan counters.
+
+**Fixes**
+
+Replaced one-shot dressing with delayed-data handling, bounded retries and model reload recovery. Missing-only filters do not affect the full-set preview. Reworked Collections integration after the blocked toy/Hearthstone report: MogFocus no longer writes Blizzard tab selection or registry, or refreshes native pages. Existing goals, settings and Czech fonts are preserved. In-game validation is still required.
+
 ## 0.2.1 — 2026-10-23
 
 ### Čeština

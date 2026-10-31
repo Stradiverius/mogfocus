@@ -19,6 +19,7 @@ function M:Debug()
     end
     for stage, err in pairs(self.setupErrors or {}) do self:Print(stage .. ": " .. err) end
     if self.Fonts.fallback then self:Print(self.L("FONT_FALLBACK")) end
+    if self.Preview.lastError then self:Print("Preview: " .. self.Preview.lastError) end
 end
 
 function M:Notify(set)
@@ -52,6 +53,7 @@ function M:Refresh(invalidate, isRetry)
         self.Collection:Observe(set, function(result) self:Notify(result) end)
     end
     self.UI:Render()
+    self.Preview:Refresh()
     if pending and self.UI.frame and self.UI.frame:IsShown() and not self.loadingRetry and (self.loadingAttempts or 0) < 4 then
         self.loadingAttempts = (self.loadingAttempts or 0) + 1
         self.loadingRetry = true
@@ -117,7 +119,7 @@ events:SetScript("OnEvent", function(_, event, arg1)
     elseif event == "PLAYER_REGEN_ENABLED" then M:Initialize()
     elseif M.ready then
         if event == "UNIT_MODEL_CHANGED" and arg1 ~= "player" then return end
-        if event == "UNIT_MODEL_CHANGED" then M.UI.modelSet = nil end
+        if event == "UNIT_MODEL_CHANGED" then M.Preview:UnitChanged() end
         if event == "ITEM_DATA_LOAD_RESULT" and not M.Collection.requested[arg1] then return end
         -- A catalog with pending source responses gets another bounded, visible-only pass.
         if event ~= "UNIT_MODEL_CHANGED" and event ~= "ITEM_DATA_LOAD_RESULT" then M.Collection.scanList = nil end

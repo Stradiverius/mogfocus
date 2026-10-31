@@ -30,6 +30,8 @@ for chunk in chunks:
 lua.globals().M = namespace
 lua.execute((ROOT / "tests/test.lua").read_text())
 lua.execute((ROOT / "tests/update.lua").read_text())
+lua.execute((ROOT / "tests/preview.lua").read_text())
+lua.execute((ROOT / "tests/collections_safety.lua").read_text())
 
 combat_lua = LuaRuntime()
 combat_lua.execute((ROOT / "tests/wow_mock.lua").read_text())

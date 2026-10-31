@@ -22,7 +22,7 @@ for path in (ROOT / "docs").glob("*.md"):
     entries["MogFocus/docs/" + path.name] = path
 with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
     for name, path in sorted(entries.items()):
-        info = zipfile.ZipInfo(name, date_time=(2026, 10, 23, 0, 0, 0))
+        info = zipfile.ZipInfo(name, date_time=(2026, 10, 31, 0, 0, 0))
         info.compress_type = zipfile.ZIP_DEFLATED
         info.external_attr = 0o100644 << 16
         z.writestr(info, path.read_bytes())

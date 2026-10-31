@@ -189,7 +189,7 @@ Všechny uvedené herní body zatím čekají na klienta.
 
 ## 0.2.1 startup regression checks / oprava načítání
 
-`tools/check.py` now runs **33 behavior scenarios**: the previous 21 plus 12
+The 0.2.1 update introduced **33 behavior scenarios**: the previous 21 plus 12
 isolated startup cases. Each new case loads every TOC file into a fresh Lua 5.1
 VM. `SimpleFont:SetFont` returns nil in the mock, matching the pinned Blizzard
 documentation. With that correction alone, 0.2.0 reproduces the fatal assertion
@@ -215,3 +215,70 @@ combat end can retry the relevant stages. No recurring initialization timer runs
   page restoration, Settings, reload, preserved profiles and both languages.
 
 Tyto poslední herní kontroly zatím neproběhly.
+
+## 0.3.0 previews and redesigned UI / náhledy a nové rozhraní
+
+`tools/check.py` runs **49 behavior scenarios**: the previous 33, 12 preview
+regressions and 4 Collections isolation checks, plus Lua 5.1 syntax/TOC, 147 bilingual localization keys, formatting,
+changelog and both bundled font cmaps. The strict model stand-in returns the
+documented TryOn enum and nullable results. It simulates delayed unit/model data,
+geometry pending after TryOn, API exceptions, late outfit loss, race restrictions,
+hide/show, rapid selection changes, and bounded timers. It does **not** render 3D.
+
+The new integration test clicks a real catalog row callback, opens/reuses the popup,
+checks its exact set ID, verifies opening is non-mutating, then explicitly adds a
+goal, switches variants, resets the camera and closes/reopens. It checks combat
+entry guards and private fonts in both languages and all three skins. A separate
+preview test verifies the full primary set is dressed even with Missing only on
+and incomplete collection/source metadata. Old callbacks cannot apply an old set.
+
+Offline layout inspection uses frame geometry and the shipped fonts at the native
+Collections content size; this is an approximation, not a screenshot from WoW.
+The following live checks remain **UNRUN**:
+
+- [ ] **Česky:** Po přihlášení otevřít Collections → MogFocus. Na sledovaném
+  Sin Slayer's Leathers / Mythic ověřit celý oblečený set při 6/9 a zapnutém
+  Pouze chybějící. Zopakovat bez tohoto filtru a s chladnou cache; ověřit správnou
+  barvu varianty proti původnímu náhledu Blizzardu.
+- [ ] **Česky:** Přidat sety → kliknout na kartu. Otevře se nové okno s vlastní
+  postavou, celým setem, částmi a zdroji. Sledování a aktuální cíl se nezmění.
+  Tlačítko Přidat/Odebrat mění jen zobrazenou variantu. Otevření z detailu funguje
+  stejně. Vyzkoušet rychlé přepínání karet a zavření při načítání.
+- [ ] **Česky:** Tažení, kolečko, Výchozí pohled, Obnovit náhled, přesun záhlavím,
+  Escape a křížek. Proměna postavy nesmí trvale svléknout náhled. Částečný a
+  nedostupný náhled musí mít srozumitelný text. Skutečný transmog se nemění.
+- [ ] **English:** Repeat with collected/uncollected variants, multiple races,
+  both genders, Dracthyr/Worgen/native forms and class-restricted appearances.
+  Compare the exact colors and parts with Blizzard Sets. Geometry readiness and
+  outfit readback must not cause flashing, repeated undressing or an endless retry.
+- [ ] **Both languages / oba jazyky:** Warcraft, Obsidian and Arcane; native
+  703×606 Collections, long set names, low/high UI scale and resolution. Inspect
+  catalog cards, selected state, header, sources, scrollbars, popup scaling and
+  all controls. Ensure the new window stays on screen and does not overlap text.
+- [ ] **Upgrade / aktualizace:** Install the complete 0.3.0 ZIP over 0.2.1,
+  preserve SavedVariables, verify character goals/settings and the bilingual
+  changelog. Check first-login Collections startup and Czech glyphs again.
+
+### Blocked toy/Hearthstone regression
+
+The isolation tests guard the native tab-state writers against any call from
+MogFocus, preserve registry identities/counts/IDs/CVar, and emulate the template's
+automatic `parentArray="Tabs"` registration. They forbid ToyBox visibility changes
+while opening/refreshing MogFocus, then test native pages, close/reopen, combat
+refusal and repeated setup. This catches the old structural regression; it does
+not simulate WoW's taint propagation or prove that UseToy succeeds in-game.
+
+- [ ] Restart WoW with 0.3.0 installed (or `/reload` after updating all files).
+  With only MogFocus enabled, use the same Hearthstone toy before opening
+  MogFocus, after clicking MogFocus then Toys, and after slash/minimap opening.
+  Test the previously active native tab too; it must remain clickable.
+- [ ] Repeat native Toys search, pagination, favorites, item hover and left-click
+  use; test Mounts summoning and Pet Journal actions after visiting MogFocus.
+  Repeat with the user's usual addons and no blocked-action/taint dialog.
+- [ ] In combat, opening MogFocus is refused without touching native tab state.
+  Exiting combat preserves all tabs. Test normal Collections first-load, close,
+  reopen and display/UI-scale changes, including another addon with a custom tab.
+
+Pokud by blokace přetrvávala i po novém spuštění s opravenou verzí, zaznamenejte
+konkrétní zakázanou funkci a sled přepnutí záložek. Samotný původní dialog uvádí
+MogFocus, ale neobsahuje kompletní řetězec šíření taintu.

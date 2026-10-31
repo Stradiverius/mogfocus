@@ -1,13 +1,20 @@
-# MogFocus 0.2.1 — WoW Retail
+# MogFocus 0.3.0 — WoW Retail
 
-[Download / stáhnout ZIP](https://github.com/Stradiverius/mogfocus/raw/refs/heads/main/dist/MogFocus-0.2.1.zip)
+[Download / stáhnout ZIP](https://github.com/Stradiverius/mogfocus/raw/refs/heads/main/dist/MogFocus-0.3.0.zip)
 
 ## Česky
 
-Verze **0.2.1** opravuje pád při načítání fontů, kvůli kterému se záložka
-MogFocus objevila až po příkazu a zůstala prázdná. Načítání nastavení a trackeru
-lze po přerušení zopakovat. Při skutečně chybějícím fontu se použije dočasná
-náhrada a vypíše se zpráva; nainstalujte celý ZIP včetně složky `Fonts`.
+Verze **0.3.0** přidává velký náhled celého setu na vlastní postavě: v katalogu
+**Přidat sety** klikněte na kartu. Nové okno nabízí otáčení, přiblížení, seznam
+částí se zdroji a samostatné tlačítko pro sledování této varianty. Náhled nově
+čeká na model a oblečení, opakuje nedokončené načtení a ukazuje jeho stav.
+Všechny tři skiny mají nové záhlaví, barevné akcenty, karty a pozadí náhledu.
+Opravy načítání a českých fontů z 0.2.1 zůstávají součástí; instalujte celý ZIP.
+
+Po hlášení blokovaného Hearthstonu je přepracováno i napojení na Collections.
+Záložka zůstává vedle Campsites, ale používá vlastní stav a nepřepisuje výběr
+záložek Blizzardu ani neobnovuje stránku hraček. Po instalaci hru znovu spusťte;
+starou blokaci nelze spolehlivě odstranit pouhým zavřením jejího hlášení.
 
 MogFocus sleduje ručně vybrané transmog sety a jednotlivé varianty pro každou
 postavu zvlášť. Katalog nyní zahrnuje raidové i ostatní sety, které poskytuje
@@ -18,17 +25,17 @@ backend ani externí účet. Je určen pro Retail, nikoliv klienty Classic.
 
 1. Ukončete hru a zálohujte
    `WTF/Account/<účet>/SavedVariables/MogFocus.lua`.
-2. Rozbalte `MogFocus-0.2.1.zip` do
+2. Rozbalte `MogFocus-0.3.0.zip` do
    `World of Warcraft/_retail_/Interface/AddOns/`.
 3. Výsledná cesta je `Interface/AddOns/MogFocus/MogFocus.toc`. ZIP má právě jednu
    kořenovou složku `MogFocus`, včetně fontů a licencí. Nevytvářejte druhou vnořenou
    složku. Při aktualizaci nemažte SavedVariables.
-4. Povolte MogFocus v seznamu addonů. Cílový klient je **12.1.5.70529**, Interface
+4. Povolte MogFocus v seznamu addonů. Cílový klient je **12.1.5.70575**, Interface
    **120105**; skutečnou verzi zjistíte `/mogfocus debug` nebo `/dump GetBuildInfo()`.
    Při jiném buildu ověřte API, nepřepisujte pouze číslo v `.toc`.
 
-Verze 0.2.1 zachovává schéma 2, GUID profily, vybrané varianty, pořadí, připnutí,
-aktuální expanzi i všechna nastavení verzí 0.1.0 i 0.2.0. Načtení katalogu nepřidává cíle.
+Verze 0.3.0 zachovává schéma 2, GUID profily, vybrané varianty, pořadí, připnutí,
+aktuální expanzi i všechna předchozí nastavení. Načtení katalogu nepřidává cíle.
 
 ### Otevření a používání
 
@@ -42,6 +49,10 @@ aktuální expanzi i všechna nastavení verzí 0.1.0 i 0.2.0. Načtení katalog
 - Nová postava začíná bez cílů. **Vybrat první set / Přidat sety** otevře katalog.
   Výchozí filtr je aktuální classa; lze vybrat jinou classu i všechny. Expanze,
   varianta, hledání a nepovinný filtr konkrétního raidu zůstávají dostupné.
+- Kliknutí na kartu otevře samostatný náhled konkrétní varianty na vaší postavě.
+  **Přidat do MogFocus** ji začne sledovat; samotné prohlížení výběr nemění.
+  Tažením otáčejte, kolečkem přibližujte, tlačítkem **Výchozí pohled** vraťte
+  kameru. Okno lze přesunout tažením za záhlaví a zavřít křížkem nebo Escape.
 - Katalog načte ID a názvy bez čekání na dropy. Podrobnosti zdrojů dohledává
   dávkově a jen při otevření katalogu. Set bez známého zdroje lze normálně přidat.
   Hidden-until-collected varianty respektují data Blizzardu. Výběr jedné varianty
@@ -56,8 +67,10 @@ aktuální expanzi i všechna nastavení verzí 0.1.0 i 0.2.0. Načtení katalog
   expanze nezmění uložený **Aktuální cíl**; použijte výslovnou změnu zaměření.
 - Detail zobrazuje skutečný počet získaných vzhledů, sloty, ikony, tooltipy a
   zdroje. **Pouze chybějící** omezí seznam. `? / ?` je neúplná odpověď, ne 0/N.
-  **Obnovit** umožňuje opakovat načtení. Náhled obléká pouze samostatný model vaší
-  postavy, nepoužívá aplikaci transmogu. Tažením jej otočíte, kolečkem přiblížíte.
+  **Obnovit** umožňuje opakovat načtení. **Prohlédnout set** otevře velký náhled.
+  Model vždy zkouší celý set, včetně získaných i dosud chybějících částí. Změny
+  se týkají jen náhledového modelu. Po vyčerpání automatických pokusů použijte
+  **Obnovit náhled**; nepoužitelné části mají výslovně označený částečný náhled.
 - **Kam jít** seskupuje chybějící vzhledy podle doložených raidů a ostatních
   zdrojů. V rámci raidu jsou počty bez duplicit. Alternativy jsou možnosti získání
   stejného vzhledu, nikoliv další povinné dropy. Neznámé vazby mají stav
@@ -76,7 +89,8 @@ Licence je v `MogFocus/LICENSES/DejaVu.txt`, podrobnosti v [docs/FONTS.md](docs/
 ### Diagnostika, rozsah dat a testování
 
 `/mogfocus debug` vypíše verzi, build, dostupnost API a připravenost jednotlivých
-částí rozhraní. Při přerušeném načítání doplní zachycenou Lua chybu.
+částí rozhraní. Při přerušeném načítání doplní zachycenou Lua chybu, včetně
+poslední zachycené chyby náhledu, pokud nastala.
 `/mogfocus catalogcheck` porovná ID aktuálního filtrovaného seznamu Blizzard Sets
 a jeho variant s katalogem MogFocus a vypíše chybějící ID. Pro ověření všech class
 opakujte příkaz po jejich výběru v původním Blizzard rozhraní; audit nemění filtry
@@ -87,16 +101,23 @@ Lokální databáze stále obsahuje 229 doložených mapování Classic a Tier 4
 **to již neomezuje katalog ani možnost výběru**. Podrobnosti a licence ATT jsou
 v [docs/SOURCES.md](docs/SOURCES.md).
 
-Prošly automatické Lua 5.1 testy a kontroly znakových map obou fontů. **Běžící WoW
+Prošlo 49 automatických scénářů v Lua 5.1 a kontroly znakových map obou fontů. **Běžící WoW
 klient nebyl k dispozici.** Vykreslení, úplnost ID na živém účtu, combat/taint,
 načítání modelů a kolize addonů ověřte podle [docs/TESTING.md](docs/TESTING.md).
 
 ## English
 
-Version **0.2.1** fixes the fatal font initialization check that left the
-Collections tab absent or empty. Interrupted Settings/tracker setup can retry.
-A genuinely missing font uses a temporary fallback and one explanatory message;
-install the complete ZIP, including its `Fonts` directory.
+Version **0.3.0** adds a large full-set preview on your own character: click a
+card in **Add sets**. The separate window offers rotation, zoom, parts and sources,
+and an explicit action to track that variant. Previews now wait for character and
+outfit data, retry pending operations and report loading/partial/unavailable states.
+All three skins gain new headers, accents, cards and model stages. The startup
+and Czech-font fixes from 0.2.1 remain included; install the complete ZIP.
+
+Following the blocked Hearthstone report, Collections integration was reworked.
+The tab remains next to Campsites but owns its state without changing Blizzard's
+tab selection/registry or refreshing the Toys page. Restart WoW after installing;
+simply dismissing an existing blocked-action dialog does not reliably clear it.
 
 MogFocus tracks manually selected transmog set variants separately for each
 character. The catalog now includes raid and non-raid sets supplied by Blizzard
@@ -106,13 +127,13 @@ required addons, libraries, backend or external accounts. Retail only.
 ### Install / update
 
 Exit WoW and back up `WTF/Account/<account>/SavedVariables/MogFocus.lua`. Extract
-`MogFocus-0.2.1.zip` into `World of Warcraft/_retail_/Interface/AddOns/`; the final
+`MogFocus-0.3.0.zip` into `World of Warcraft/_retail_/Interface/AddOns/`; the final
 path must be `Interface/AddOns/MogFocus/MogFocus.toc`, without doubled nesting.
 Fonts and licenses are bundled. Enable MogFocus and keep your SavedVariables on
-upgrade. Version 0.2.1 retains schema 2 and all previous GUID-keyed goals, order,
+upgrade. Version 0.3.0 retains schema 2 and all previous GUID-keyed goals, order,
 pin, focus and account options. Catalog loading never selects goals automatically.
 
-Target: **Retail 12.1.5.70529**, Interface **120105**. Check your actual version
+Target: **Retail 12.1.5.70575**, Interface **120105**. Check your actual version
 with `/mogfocus debug` or `/dump GetBuildInfo()`. Different builds need API
 validation, not just a changed TOC number.
 
@@ -131,6 +152,11 @@ available before optional source lookups. Unknown-source and non-raid sets remai
 selectable; hidden-until-collected visibility follows Blizzard metadata. Selecting
 one variant never selects the group.
 
+Click a catalog card to preview that exact variant on your character. Browsing
+does not add a goal: use **Add to MogFocus** to track it. Drag the model to rotate,
+scroll to zoom, or **Reset view** to restore the camera. Drag the header to move
+the window; its close button or Escape closes it.
+
 Right-click a row in the original **Appearances → Sets** list to **Add to MogFocus**.
 A group opens a MogFocus variant submenu requiring an explicit choice. Tracked
 variants show **Already tracked / Remove from MogFocus**. A short notification
@@ -142,7 +168,10 @@ Pin/unpin, manually reorder, sort by progress/raid, hide completed or remove goa
 Browsing and saved **Current focus** are independent. Detail rows show collection
 counts, icons, slots, tooltips and acquisition information; **Missing only** filters
 the parts. `? / ?` means incomplete data, never zero progress. **Refresh** retries
-loading. The rotatable/zoomable character preview changes only its own model.
+loading. **View set** opens the large preview. It always tries the entire set,
+including collected and uncollected parts, and changes only its own model. Use
+**Reload preview** after automatic retries run out. Unsupported parts produce an
+explicit partial-preview message.
 
 **Where to go** groups missing appearances by verified raid or other source,
 deduplicates within a raid and identifies alternative acquisition routes. Missing
@@ -165,12 +194,13 @@ global WoW font. Game-supplied names remain in client language. See
 Sets view and its variants against MogFocus. Repeat with each class selected in
 Blizzard's UI to audit all classes. The command changes neither filters nor goals;
 zero native results do not establish completeness. `/mogfocus debug` reports the
-client, required APIs, setup readiness and any captured initialization errors.
+client, required APIs, setup readiness and any captured initialization errors,
+including the last preview exception if one occurred.
 
 The existing 229 Classic / Tier 4 mappings and live drop API remain unchanged.
 Unknown token, vendor and quest routes **no longer restrict catalog membership**;
 see [docs/SOURCES.md](docs/SOURCES.md). **No WoW client was executed.** Automated
-checks cover logic, font cmaps and UI wiring; rendering, live-account catalog
+checks cover 49 behavior scenarios, font cmaps and UI wiring; rendering, live-account catalog
 parity, combat/taint, models and addon collisions still need the
 [in-game checklist](docs/TESTING.md).
 
